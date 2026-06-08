@@ -1,0 +1,54 @@
+providers:
+  ruflo:
+    enabled: true
+    kind: swarm-runtime
+    command: pnpm
+    args: ["dlx", "ruflo@latest"]
+    healthCheckArgs: ["dlx", "ruflo@latest", "--version"]
+    installHint: "pnpm dlx ruflo@latest init wizard"
+
+  gentlePi:
+    enabled: true
+    kind: coding-harness
+    command: pi
+    healthCheckArgs: ["--version"]
+    installHint: "Instala Pi y ejecuta: pi install npm:gentle-pi"
+
+  gentlemanCli:
+    enabled: true
+    kind: ecosystem-configurator
+    command: gentle-ai
+    healthCheckArgs: ["--version"]
+    installHint: "Instala Gentle-AI y ejecuta: gentle-ai doctor"
+
+  ecc:
+    enabled: true
+    kind: capability-catalog
+    command: pnpm
+    args: ["--package=ecc-universal", "dlx", "ecc"]
+    healthCheckArgs: ["--package=ecc-universal", "dlx", "ecc", "--help"]
+    installHint: "pnpm add -D ecc-universal  o verifica con: pnpm --package=ecc-universal dlx ecc doctor"
+
+  deepagents:
+    enabled: true
+    kind: library-adapter
+    entry: "${GRU_DEEPAGENTS_ENTRY}"
+    installHint: "Crea un adaptador ejecutable y define GRU_DEEPAGENTS_ENTRY"
+
+  engram:
+    enabled: true
+    kind: memory-runtime
+    command: engram
+    healthCheckArgs: ["--version"]
+    installHint: "Instala gentle-engram/Engram y ejecuta: engram projects list"
+
+  awesomeCopilot:
+    enabled: true
+    kind: skills-catalog
+    path: "vendor/awesome-copilot"
+    installHint: "Clona github/awesome-copilot en vendor/awesome-copilot o define GRU_AWESOME_COPILOT_PATH"
+
+  local:
+    enabled: false
+    kind: local-runtime
+    installHint: "Configura un runtime LLM local real antes de habilitarlo"

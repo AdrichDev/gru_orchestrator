@@ -1,0 +1,40 @@
+project:
+  name: gru-orchestrator
+
+runtime:
+  mode: auto
+  # auto: usa el harness detectado; standalone si no hay harness
+  # Valores: auto | claude | codex | gemini | pi | standalone
+
+harnesses:
+  claude:
+    adapter: claude
+    instructions: .claude
+  codex:
+    adapter: codex
+    instructions: .codex
+  gemini:
+    adapter: gemini
+    instructions: .gemini
+  pi:
+    adapter: pi
+    instructions: .pi
+
+deepagents:
+  mode: auto
+  # auto: host-managed si hay harness, sdk-managed si standalone
+  # Valores: auto | host-managed | sdk-managed | disabled
+  sdk:
+    provider: null      # ej: anthropic | openai
+    model: null         # ej: anthropic:claude-sonnet-4-6
+    apiKeyEnv: null     # ej: ANTHROPIC_API_KEY
+
+routing:
+  defaultMode: normal
+  enableRuflo: true
+  enableGentlePi: true
+  enableGentlemanCli: true
+  enableECC: true
+  enableDeepagents: true
+  enableEngram: true
+  enableAwesomeCopilot: true

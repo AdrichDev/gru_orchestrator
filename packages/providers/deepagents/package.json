@@ -1,0 +1,11 @@
+{
+  "name": "@gru/provider-deepagents",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@langchain/anthropic": "^1.4.0",
+    "@langchain/core": "^1.1.48",
+    "deepagents": "^1.10.2",
+    "langchain": "^1.4.4"
+  }
+}

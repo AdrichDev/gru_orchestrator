@@ -1,0 +1,36 @@
+import { execa } from "execa";
+import { GruProvider, ProviderAvailability, ProviderTask, ProviderResult } from "../../../shared/src/ports/provider.js";
+import { probeCommand } from "../../../shared/src/runtime/probe.js";
+
+export class RufloProvider implements GruProvider {
+  id = "ruflo" as const;
+  canHandle(task: ProviderTask): boolean {
+    return /swarm|multiagente|paralelo/i.test(task.prompt);
+  }
+  async checkAvailability(): Promise<ProviderAvailability> {
+    const probe = await probeCommand("pnpm", ["dlx", "ruflo@latest", "--version"]);
+    return {
+      providerId: this.id,
+      available: probe.available,
+      executable: "pnpm dlx ruflo@latest",
+      version: probe.version,
+      reason: probe.reason,
+      installHint: "Ejecuta: pnpm dlx ruflo@latest init wizard"
+    };
+  }
+  async run(task: ProviderTask): Promise<ProviderResult> {
+    try {
+      const result = await execa("pnpm", ["dlx", "ruflo@latest", "run", task.prompt], { reject: false });
+      return {
+        providerId: this.id,
+        success: result.exitCode === 0,
+        output: result.stdout || result.stderr,
+        error: result.exitCode === 0 ? undefined : result.stderr,
+        exitCode: result.exitCode,
+        executedCommand: `pnpm dlx ruflo@latest run ${JSON.stringify(task.prompt)}`
+      };
+    } catch (error) {
+      return { providerId: this.id, success: false, output: "", error: error instanceof Error ? error.message : String(error) };
+    }
+  }
+}

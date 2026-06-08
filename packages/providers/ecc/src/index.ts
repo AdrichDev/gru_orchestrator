@@ -1,0 +1,38 @@
+import { execa } from "execa";
+import { GruProvider, ProviderAvailability, ProviderTask, ProviderResult } from "../../../shared/src/ports/provider.js";
+import { probeCommand } from "../../../shared/src/runtime/probe.js";
+
+export class EccProvider implements GruProvider {
+  id = "ecc" as const;
+  canHandle(task: ProviderTask): boolean {
+    return /skill|hook|patr[oó]n|seguridad|cve/i.test(task.prompt);
+  }
+  async checkAvailability(): Promise<ProviderAvailability> {
+    const probe = await probeCommand("pnpm", ["--package=ecc-universal", "dlx", "ecc", "--help"]);
+    return {
+      providerId: this.id,
+      available: probe.available,
+      status: probe.available ? "ready" : "missing",
+      kind: "cli",
+      executable: "pnpm --package=ecc-universal dlx ecc",
+      version: probe.version,
+      reason: probe.reason,
+      installHint: "pnpm add -D ecc-universal  o verifica con: pnpm --package=ecc-universal dlx ecc doctor"
+    };
+  }
+  async run(task: ProviderTask): Promise<ProviderResult> {
+    try {
+      const result = await execa("pnpm", ["--package=ecc-universal", "dlx", "ecc", "consult", task.prompt], { reject: false });
+      return {
+        providerId: this.id,
+        success: result.exitCode === 0,
+        output: result.stdout || result.stderr,
+        error: result.exitCode === 0 ? undefined : result.stderr,
+        exitCode: result.exitCode,
+        executedCommand: `pnpm --package=ecc-universal dlx ecc consult ${JSON.stringify(task.prompt)}`
+      };
+    } catch (error) {
+      return { providerId: this.id, success: false, output: "", error: error instanceof Error ? error.message : String(error) };
+    }
+  }
+}
