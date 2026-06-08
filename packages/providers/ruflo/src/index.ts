@@ -20,14 +20,20 @@ export class RufloProvider implements GruProvider {
   }
   async run(task: ProviderTask): Promise<ProviderResult> {
     try {
-      const result = await execa("pnpm", ["dlx", "ruflo@latest", "run", task.prompt], { reject: false });
+      // Ruflo has no sync one-shot `run` command — delegate via workflow run (async delegation).
+      // The workflow is queued for the Ruflo daemon; output contains the workflow ID and status.
+      const result = await execa(
+        "pnpm",
+        ["dlx", "ruflo@latest", "workflow", "run", "-t", "development", "--task", task.prompt],
+        { reject: false }
+      );
       return {
         providerId: this.id,
         success: result.exitCode === 0,
         output: result.stdout || result.stderr,
         error: result.exitCode === 0 ? undefined : result.stderr,
         exitCode: result.exitCode,
-        executedCommand: `pnpm dlx ruflo@latest run ${JSON.stringify(task.prompt)}`
+        executedCommand: `pnpm dlx ruflo@latest workflow run -t development --task ${JSON.stringify(task.prompt)}`
       };
     } catch (error) {
       return { providerId: this.id, success: false, output: "", error: error instanceof Error ? error.message : String(error) };

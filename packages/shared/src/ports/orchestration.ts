@@ -78,4 +78,6 @@ export interface SupervisionPolicy {
   requireFreshContext: boolean;
   /** Gate fails if TestEvidence is absent. */
   blockOnMissingEvidence: boolean;
+  /** Returns list of policy violations for the given assignment. Empty = valid. */
+  validate(assignment: TaskAssignment): string[];
 }

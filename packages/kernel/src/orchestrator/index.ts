@@ -12,16 +12,25 @@ import {
   RoutingDecision
 } from "../../../shared/src/ports/provider.js";
 import { ProjectConfig, ProvidersFile } from "../../../shared/src/types/config.js";
+import type { SddPhase } from "../../../shared/src/ports/agent.js";
+import type { PlanResult, TaskAssignment } from "../../../shared/src/ports/orchestration.js";
+import type { ReviewResult, TestEvidence } from "../../../shared/src/ports/results.js";
+import { RufloProviderAdapter } from "../adapters/ruflo.js";
+import { AwesomeCopilotProviderAdapter } from "../adapters/awesome-copilot.js";
+import { DefaultProviderRegistry } from "../adapters/registry-agentic.js";
+import { DefaultAgentResolver } from "../adapters/resolver.js";
+import { DefaultSupervisionPolicy } from "../adapters/supervision.js";
+import { evaluateAllGates } from "../gates/index.js";
 
-// Import Providers
-import { RufloProvider } from "../../../providers/ruflo/src/index.js";
-import { GentlePiProvider } from "../../../providers/gentle-pi/src/index.js";
-import { GentlemanCliProvider } from "../../../providers/gentleman-cli/src/index.js";
-import { EccProvider } from "../../../providers/ecc/src/index.js";
-import { DeepagentsProvider } from "../../../providers/deepagents/src/index.js";
-import { EngramProvider } from "../../../providers/engram/src/index.js";
-import { AwesomeCopilotProvider } from "../../../providers/awesome-copilot/src/index.js";
-import { LocalProvider } from "../../../providers/local/src/index.js";
+// Import Providers via workspace package names
+import { RufloProvider } from "@gru/provider-ruflo";
+import { GentlePiProvider } from "@gru/provider-gentle-pi";
+import { GentlemanCliProvider } from "@gru/provider-gentleman-cli";
+import { EccProvider } from "@gru/provider-ecc";
+import { DeepagentsProvider } from "@gru/provider-deepagents";
+import { EngramProvider } from "@gru/provider-engram";
+import { AwesomeCopilotProvider } from "@gru/provider-awesome-copilot";
+import { LocalProvider } from "@gru/provider-local";
 
 // Import Personas
 import { applyCaveman } from "../../../skills/src/personas/caveman/index.js";
@@ -206,4 +215,184 @@ export async function orchestrateTask(prompt: string, forcedProvider?: ProviderI
   console.log(`\nResultado final:\n----------------\n${finalOutput}\n----------------`);
   console.log(`Resultado guardado en ${runLogPath}`);
   return finalOutput;
+}
+
+// ─── Agentic pipeline ────────────────────────────────────────────────────────
+
+function buildReviewResultFromOutput(
+  assignment: TaskAssignment,
+  output: string,
+  success: boolean
+): ReviewResult {
+  const approved = success && !/(BLOCKER|FAIL|REJECT|ERROR)/i.test(output);
+  const blockers = approved ? [] : ["Review did not approve — see output"];
+  return {
+    assignmentId: assignment.id,
+    reviewer: assignment.reviewer,
+    approved,
+    findings: [],
+    blockers,
+    suggestions: [],
+    completedAt: new Date().toISOString(),
+  };
+}
+
+function buildTestEvidenceFromOutput(
+  assignment: TaskAssignment,
+  output: string,
+  success: boolean
+): TestEvidence {
+  const passed = success && !/(FAIL|ERROR|REGRESSION)/i.test(output);
+  return {
+    assignmentId: assignment.id,
+    tester: assignment.tester,
+    passed,
+    suites: [],
+    regressions: passed ? [] : ["Tester reported failure — see output"],
+    completedAt: new Date().toISOString(),
+  };
+}
+
+function parseWorkflowState(result: { artifacts?: string[] }): string {
+  const tag = (result.artifacts ?? []).find((a) => a.startsWith("ruflo:workflow:"));
+  return tag ? (tag.split(":")[3] ?? "unknown") : "unknown";
+}
+
+function makeBlockedReview(assignment: TaskAssignment): ReturnType<typeof buildReviewResultFromOutput> {
+  return {
+    assignmentId: assignment.id,
+    reviewer: assignment.reviewer,
+    approved: false,
+    findings: [],
+    blockers: ["Execution did not complete — review blocked"],
+    suggestions: [],
+    completedAt: new Date().toISOString(),
+  };
+}
+
+export async function orchestrateAgenticTask(
+  prompt: string,
+  phase: SddPhase = "apply",
+  sddId = "current"
+): Promise<PlanResult> {
+  const taskId = `agentic_${Date.now()}`;
+
+  const policy = new DefaultSupervisionPolicy();
+  const registry = new DefaultProviderRegistry();
+  // Gru registers all providers. Resolver picks executor from any; reviewer+tester always Ruflo.
+  registry.register(new AwesomeCopilotProviderAdapter());
+  registry.register(new RufloProviderAdapter());
+
+  const resolver = new DefaultAgentResolver(registry, policy);
+
+  const gruTask = { id: taskId, prompt, metadata: {} };
+  const assignment = await resolver.resolve(gruTask, phase);
+
+  console.log(`\n[Agentic] executor  → ${assignment.executor.id}`);
+  console.log(`[Agentic] reviewer  → ${assignment.reviewer.id}`);
+  console.log(`[Agentic] tester    → ${assignment.tester.id}`);
+
+  const rufloAdapter = registry.get("ruflo")!;
+
+  // Step 1: executor — must reach COMPLETED before pipeline advances
+  const executionResult = await rufloAdapter.execute({
+    ...assignment,
+    task: { ...gruTask, metadata: { role: "executor" } },
+  });
+  const execState = parseWorkflowState(executionResult);
+  console.log(`[Agentic] execution ${execState} (success=${executionResult.success})`);
+
+  if (!executionResult.success) {
+    const gates = evaluateAllGates(assignment, executionResult, makeBlockedReview(assignment), undefined, sddId);
+    return {
+      plan: { id: taskId, description: prompt, assignments: [assignment], gates: assignment.gates, createdAt: new Date().toISOString() },
+      executionResults: [executionResult],
+      reviewResults: [],
+      testEvidences: [],
+      gateResults: gates,
+      approved: false,
+      blockers: [`execution:${execState} — ${executionResult.error?.message ?? "no output"}`],
+    };
+  }
+
+  // Step 2: reviewer — only reached when executor COMPLETED
+  const reviewerResult = await rufloAdapter.execute({
+    ...assignment,
+    task: { ...gruTask, metadata: { role: "reviewer", previousOutput: executionResult.output } },
+  });
+  const reviewerState = parseWorkflowState(reviewerResult);
+  console.log(`[Agentic] reviewer  ${reviewerState} (success=${reviewerResult.success})`);
+
+  if (!reviewerResult.success) {
+    const gates = evaluateAllGates(assignment, executionResult, makeBlockedReview(assignment), undefined, sddId);
+    return {
+      plan: { id: taskId, description: prompt, assignments: [assignment], gates: assignment.gates, createdAt: new Date().toISOString() },
+      executionResults: [executionResult],
+      reviewResults: [],
+      testEvidences: [],
+      gateResults: gates,
+      approved: false,
+      blockers: [`reviewer:${reviewerState} — ${reviewerResult.error?.message ?? "no output"}`],
+    };
+  }
+
+  const reviewResult = buildReviewResultFromOutput(assignment, reviewerResult.output, reviewerResult.success);
+  console.log(`[Agentic] review    ${reviewResult.approved ? "approved" : "rejected"}`);
+
+  if (!reviewResult.approved) {
+    const gates = evaluateAllGates(assignment, executionResult, reviewResult, undefined, sddId);
+    return {
+      plan: { id: taskId, description: prompt, assignments: [assignment], gates: assignment.gates, createdAt: new Date().toISOString() },
+      executionResults: [executionResult],
+      reviewResults: [reviewResult],
+      testEvidences: [],
+      gateResults: gates,
+      approved: false,
+      blockers: reviewResult.blockers,
+    };
+  }
+
+  // Step 3: tester — only reached when reviewer COMPLETED and approved
+  const testerResult = await rufloAdapter.execute({
+    ...assignment,
+    task: { ...gruTask, metadata: { role: "tester", previousOutput: executionResult.output } },
+  });
+  const testerState = parseWorkflowState(testerResult);
+  console.log(`[Agentic] tester    ${testerState} (success=${testerResult.success})`);
+
+  if (!testerResult.success) {
+    const gates = evaluateAllGates(assignment, executionResult, reviewResult, undefined, sddId);
+    return {
+      plan: { id: taskId, description: prompt, assignments: [assignment], gates: assignment.gates, createdAt: new Date().toISOString() },
+      executionResults: [executionResult],
+      reviewResults: [reviewResult],
+      testEvidences: [],
+      gateResults: gates,
+      approved: false,
+      blockers: [`tester:${testerState} — ${testerResult.error?.message ?? "no output"}`],
+    };
+  }
+
+  const testEvidence = buildTestEvidenceFromOutput(assignment, testerResult.output, testerResult.success);
+  console.log(`[Agentic] test      ${testEvidence.passed ? "passed" : "failed"}`);
+
+  const gates = evaluateAllGates(assignment, executionResult, reviewResult, testEvidence, sddId);
+  const failedRequired = gates.filter((g) => {
+    const gate = assignment.gates.find((ag) => ag.id === g.gate);
+    return gate?.required && (g.status === "failed" || g.status === "blocked");
+  });
+
+  fs.mkdirSync("runs", { recursive: true });
+  const runLogPath = path.join("runs", `agentic_${taskId}.json`);
+  fs.writeFileSync(runLogPath, JSON.stringify({ taskId, prompt, phase, assignment, executionResult, reviewResult, testEvidence, gates }, null, 2), "utf-8");
+
+  return {
+    plan: { id: taskId, description: prompt, assignments: [assignment], gates: assignment.gates, createdAt: new Date().toISOString() },
+    executionResults: [executionResult],
+    reviewResults: [reviewResult],
+    testEvidences: [testEvidence],
+    gateResults: gates,
+    approved: failedRequired.length === 0,
+    blockers: failedRequired.map((g) => `${g.gate}: ${g.reason ?? g.status}`),
+  };
 }
