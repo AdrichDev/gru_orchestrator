@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "gru": "tsx apps/cli/src/index.ts"
   },
   "keywords": [],
@@ -21,9 +22,19 @@
   "devDependencies": {
     "@types/node": "^25.9.2",
     "tsx": "^4.22.4",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
   },
   "dependencies": {
+    "@gru/shared": "workspace:*",
+    "@gru/provider-awesome-copilot": "workspace:*",
+    "@gru/provider-deepagents": "workspace:*",
+    "@gru/provider-ecc": "workspace:*",
+    "@gru/provider-engram": "workspace:*",
+    "@gru/provider-gentle-pi": "workspace:*",
+    "@gru/provider-gentleman-cli": "workspace:*",
+    "@gru/provider-local": "workspace:*",
+    "@gru/provider-ruflo": "workspace:*",
     "execa": "^9.6.1",
     "yaml": "^2.9.0"
   }

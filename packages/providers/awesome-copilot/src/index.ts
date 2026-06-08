@@ -18,7 +18,11 @@ function walkSkillFiles(root: string, limit = 500): string[] {
 
 export class AwesomeCopilotProvider implements GruProvider {
   id = "awesomeCopilot" as const;
-  private readonly root = path.resolve(process.env.GRU_AWESOME_COPILOT_PATH || "vendor/awesome-copilot");
+  private readonly root: string;
+
+  constructor(root?: string) {
+    this.root = root ?? path.resolve(process.env.GRU_AWESOME_COPILOT_PATH ?? "vendor/awesome-copilot");
+  }
 
   canHandle(task: ProviderTask): boolean {
     return /cat[aá]logo|awesome|copilot|skill/i.test(task.prompt);

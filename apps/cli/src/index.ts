@@ -3,9 +3,11 @@ import { stdin as input, stdout as output } from "node:process";
 import {
   getProviderStatuses,
   orchestrateTask,
+  orchestrateAgenticTask,
   ProviderUnavailableError
 } from "../../../packages/kernel/src/orchestrator/index.js";
 import type { ProviderId } from "../../../packages/shared/src/ports/provider.js";
+import type { SddPhase } from "../../../packages/shared/src/ports/agent.js";
 
 function formatStatus(s: { available: boolean; status?: string; kind?: string }): string {
   if (s.available) {
@@ -79,16 +81,49 @@ async function main(): Promise<void> {
   if (args.length === 0) {
     console.log("Uso:");
     console.log('  pnpm gru "<prompt>"');
+    console.log('  pnpm gru --agentic "<prompt>" [--phase apply]');
     console.log("  pnpm gru status   (también /status)");
     console.log("  pnpm gru doctor   (alias de status)");
     return;
   }
 
   const strict = args.includes("--strict");
-  const filteredArgs = args.filter((a) => a !== "--strict");
+  const agentic = args.includes("--agentic");
+  const phaseIdx = args.indexOf("--phase");
+  const phase: SddPhase = (phaseIdx !== -1 ? args[phaseIdx + 1] : "apply") as SddPhase;
+  const sddIdx = args.indexOf("--sdd");
+  const sddId = sddIdx !== -1 ? args[sddIdx + 1] : "current";
+
+  const filteredArgs = args.filter((a, i) => {
+    if (a === "--strict" || a === "--agentic") return false;
+    if (a === "--phase" || a === "--sdd") return false;
+    if (i > 0 && (args[i - 1] === "--phase" || args[i - 1] === "--sdd")) return false;
+    return true;
+  });
   const commandOrPrompt = filteredArgs.join(" ");
+
   if (["status", "/status", "doctor", "/doctor"].includes(commandOrPrompt.toLowerCase())) {
     await runStatus(strict);
+    return;
+  }
+
+  if (agentic) {
+    try {
+      const result = await orchestrateAgenticTask(commandOrPrompt, phase, sddId);
+      console.log(`\n[Agentic] ${result.approved ? "APROBADO ✓" : "RECHAZADO ✗"}`);
+      if (result.blockers.length > 0) {
+        console.log("Blockers:");
+        for (const b of result.blockers) console.log(`  - ${b}`);
+      }
+      console.log("\nGates:");
+      for (const g of result.gateResults) {
+        console.log(`  ${g.gate}: ${g.status}${g.reason ? ` — ${g.reason}` : ""}`);
+      }
+      if (!result.approved) process.exitCode = 2;
+    } catch (error) {
+      console.error("[Agentic] BLOQUEADO:", error instanceof Error ? error.message : String(error));
+      process.exitCode = 2;
+    }
     return;
   }
 
