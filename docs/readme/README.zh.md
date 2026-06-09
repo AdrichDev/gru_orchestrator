@@ -12,13 +12,11 @@
 
 ---
 
-<p align="center">
-  🇪🇸 <a href="../../README.md"><strong>Español</strong></a> &nbsp;|&nbsp;
-  🇺🇸 <a href="README.en.md"><strong>English</strong></a> &nbsp;|&nbsp;
-  🇨🇳 <a href="README.zh.md"><strong>中文</strong></a> &nbsp;|&nbsp;
-  🇫🇷 <a href="README.fr.md"><strong>Français</strong></a> &nbsp;|&nbsp;
-  🇩🇪 <a href="README.de.md"><strong>Deutsch</strong></a>
-</p>
+<div align="center">
+
+🇪🇸 [**Español**](../../README.md) &nbsp;|&nbsp; 🇺🇸 [**English**](README.en.md) &nbsp;|&nbsp; 🇨🇳 [**中文**](README.zh.md) &nbsp;|&nbsp; 🇫🇷 [**Français**](README.fr.md) &nbsp;|&nbsp; 🇩🇪 [**Deutsch**](README.de.md)
+
+</div>
 
 ---
 
