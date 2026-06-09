@@ -1,11 +1,9 @@
 {
   "mcpServers": {
     "claude-flow": {
-      "command": "cmd",
+      "command": "pnpm",
       "args": [
-        "/c",
-        "npx",
-        "-y",
+        "dlx",
         "ruflo@latest",
         "mcp",
         "start"

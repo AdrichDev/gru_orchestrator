@@ -174,3 +174,34 @@ npx @claude-flow/cli@latest doctor --fix
 ```
 
 **Agent tool** handles execution (agents, files, code, git). **MCP tools** handle coordination (swarm, memory, hooks). **CLI** is the same via Bash.
+
+## Scope Completion Protocol
+
+After EACH scope item completes → generate caveman summary → save to Engram → surface to user.
+
+### Caveman format (required)
+
+```text
+SCOPE [sdd-name] DONE.
+LEVEL: [0-4] — [Trivial|Small|Medium|Large|Critical].
+PROVIDERS: [local, engram, gentlePi, ruflo, ecc, context7, awesomeCopilot, ...].
+PROCEDURE: [step1 → step2 → step3].
+FILES: [N new | M modified].
+TESTS: [N new — all green].
+DECISION: [architectural decision if any, or "none"].
+```
+
+### Save to Engram
+
+```text
+KEY:   project:gru-orchestrator:scope:[sdd-name]
+VALUE: [full caveman summary]
+LEVEL: [level]
+```
+
+### Rules
+
+- Do not summarize until all tests pass.
+- Only providers actually used — never fabricate.
+- PROCEDURE = real steps executed, not the theoretical workflow.
+- If scope was PARTIAL → indicate PARTIAL + reason.

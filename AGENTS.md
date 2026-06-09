@@ -496,6 +496,39 @@ LOW    → Solo suposiciones.
 
 ---
 
+## PROTOCOLO: RESUMEN DE SCOPE
+
+Al terminar CADA ítem del scope → generar resumen caveman → guardar en Engram → mostrar al usuario.
+
+### Formato caveman obligatorio
+
+```text
+SCOPE [nombre-sdd] DONE.
+NIVEL: [0-4] — [Trivial|Small|Medium|Large|Critical].
+PROVIDERS: [local, engram, gentlePi, ruflo, ecc, context7, awesomeCopilot, ...].
+PROCEDURE: [paso1 → paso2 → paso3].
+FILES: [N new | M modified].
+TESTS: [N new — all green].
+DECISION: [decisión arquitectónica si aplica, o "none"].
+```
+
+### Guardar en Engram
+
+```text
+KEY:   project:gru-orchestrator:scope:[nombre-sdd]
+VALUE: [resumen caveman completo]
+LEVEL: [nivel]
+```
+
+### Reglas
+
+- No resumir hasta que todos los tests pasen.
+- Solo providers realmente usados — no inventar.
+- PROCEDURE = pasos reales ejecutados, no el workflow teórico.
+- Si scope fue PARCIAL → indicar PARTIAL + razón.
+
+---
+
 ## COMANDOS DISPONIBLES
 
 ```text

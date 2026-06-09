@@ -39,7 +39,7 @@ When starting on Pi:
    - pi-subagents
    - pi-intercom
 4. If any are missing → warn the user before continuing.
-5. MANDATORY & IMPERATIVE: In every sub-agent launch prompt, you MUST instruct the sub-agent to read the minion contract file (`.pi/agents/minion-contract.md`) BEFORE doing any work. This is a non-negotiable requirement.
+5. MANDATORY & IMPERATIVE: In every sub-agent launch prompt, you MUST instruct the sub-agent to read the minion contract file (`minion-contract.md` at project root) BEFORE doing any work. This is a non-negotiable requirement.
 6. MANDATORY SKILL CHECK: Before executing any task, check if there is a local skill that matches. If not, you MUST query awesomeCopilot (search under `/skills/community/` or via the awesomeCopilot provider) to find matching templates or community skills. Starting a task without checking both registries is strictly forbidden.
 ```
 
@@ -94,9 +94,8 @@ Warn the user and ask them to create or download it.
 
 Mandatory Contract Rule:
 ```text
-In every sub-agent launch prompt, the orchestrator MUST IMPERATIVELY and MANDATORILY instruct the sub-agent to read the minion contract file (`.pi/agents/minion-contract.md`) BEFORE doing any work to govern its behavior, constraints, and limits. This is a non-negotiable requirement.
+In every sub-agent launch prompt, the orchestrator MUST IMPERATIVELY and MANDATORILY instruct the sub-agent to read the minion contract file (`minion-contract.md` at project root) BEFORE doing any work to govern its behavior, constraints, and limits. This is a non-negotiable requirement.
 ```
-
 
 ---
 
@@ -120,7 +119,6 @@ Mandatory Skill Search Rule:
 ```text
 If no local skill matches the task, you MUST query awesomeCopilot (search under /skills/community/ or via the awesomeCopilot provider) to find matching templates or community skills. Doing work without checking the registries first is strictly forbidden.
 ```
-
 
 ---
 
