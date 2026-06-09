@@ -1,10 +1,12 @@
-# 💻 GRU ORCHESTRATOR
+<div align="center">
 
 ```text
  █▀▀ █▀▀█ █  █    █▀▀█ █▀▀█ █▀▀ █  █ █▀▀ █▀▀ ▀▀█▀▀ █▀▀█ █▀▀█ ▀▀█▀▀ █▀▀█ █▀▀█ 
  █ █ █▄▄▀ █  █    █  █ █▄▄▀ █   █▀▀█ █▀▀ ▀▀█   █   █▄▄▀ █▄▄█   █   █  █ █▄▄▀ 
  ▀▀▀ ▀ ▀▀  ▀▀     ▀▀▀▀ ▀ ▀▀  ▀▀ ▀  ▀ ▀▀▀ ▀▀▀   ▀   ▀ ▀▀ ▀  ▀   ▀   ▀▀▀▀ ▀ ▀▀
 ```
+
+</div>
 
 > **"Gru coordinates. Minions produce. Policies govern. Human approves."**
 
