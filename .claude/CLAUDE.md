@@ -20,7 +20,7 @@ Core rule:
   Human approves.
 
 Mandatory Minion Contract Rule:
-  In every sub-agent launch prompt, you MUST IMPERATIVELY and MANDATORILY instruct the sub-agent to read the minion contract file (e.g., .pi/agents/minion-contract.md or .claude/agents/minion-contract.md depending on the active environment) BEFORE doing any work.
+  In every sub-agent launch prompt, you MUST IMPERATIVELY and MANDATORILY instruct the sub-agent to read the minion contract file (minion-contract.md at project root) BEFORE doing any work.
 
 Mandatory startup:
   1. Consult Engram.
@@ -175,6 +175,30 @@ These are stop rules for the main coordinator. Once any trigger is activated, th
 - Use fresh reviewers after implementation, conflict resolution, or incidents, as their value lies in their independent judgment, not in saving tokens.
 - Avoid delegation for truly local single-file fixes, quick status checks, and mechanical edits that are already understood.
 
+#### Context Budget — File Size Threshold
+
+Hook `PreToolUse(Read)` in `.claude/helpers/context-guard.cjs` automatically blocks full reads of files > 500 lines.
+
+When blocked → use `cavecrew-investigator` with this prompt format:
+```
+Read <file>. Return caveman summary only:
+FILE: <path> (<N> lines)
+PURPOSE: <one sentence>
+EXPORTS: <TypeA, funcB, ConstC>
+KEY_TYPES: <interface/type signatures, key fields only>
+DECISIONS: <L42: notable logic; L88: guard condition>
+DEPS: <./foo, ./bar, external-lib>
+```
+
+Agent call: `Agent({ subagent_type: "caveman:cavecrew-investigator", model: "haiku", prompt: <above> })`
+
+Rules:
+- Partial reads (offset/limit set by caller) → never blocked, always allowed.
+- After receiving summary → use targeted partial reads (with offset+limit) for specific lines only.
+- Never re-read the full file after receiving a summary.
+
+See skill: `.claude/skills/context-budget/SKILL.md`
+
 ## DECISION TABLE
 > **OCP applied**: criteria are explicit and extensible without modifying the kernel.
 > This table is Gru's logic. Not free interpretation — systematic evaluation.
@@ -207,13 +231,13 @@ For each sub-agent startup:
 2. Search both local skills and the `awesome-copilot` catalog (`vendor/awesome-copilot/skills/`) for relevant skill files.
 3. Copy the matching `SKILL.md` paths into the sub-agent's prompt as `## Skills to load before working`.
 4. Instruct the sub-agent to read those exact files BEFORE performing task-specific work.
-5. **MANDATORY & IMPERATIVE**: The orchestrator MUST instruct the sub-agent to read the minion contract file (e.g., `.pi/agents/minion-contract.md` or `.claude/agents/minion-contract.md` depending on the active environment) BEFORE performing any work. This is a non-negotiable guardrail to enforce operational limits.
+5. **MANDATORY & IMPERATIVE**: The orchestrator MUST instruct the sub-agent to read the minion contract file (`minion-contract.md` at project root) BEFORE performing any work. This is a non-negotiable guardrail to enforce operational limits.
 
 **Key rule**: pass paths, not generated summaries. Sub-agents read the full `SKILL.md` files to preserve the author's intent. This is compaction-safe since each delegation can re-read the registry if the cache is lost.
 
 ### Sub-Agent Context Protocol
 
-Sub-agents get a fresh context WITHOUT memory. The orchestrator controls context access. Every single sub-agent prompt must IMPERATIVELY and MANDATORILY mandate loading the `minion-contract.md` file corresponding to the runtime environment BEFORE doing any work to govern the agent's behavior and constraints. This is non-negotiable.
+Sub-agents get a fresh context WITHOUT memory. The orchestrator controls context access. Every single sub-agent prompt must IMPERATIVELY and MANDATORILY mandate loading `minion-contract.md` at the project root BEFORE doing any work to govern the agent's behavior and constraints. This is non-negotiable.
 
 
 ### Complexity Evaluation

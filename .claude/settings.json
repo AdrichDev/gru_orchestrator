@@ -20,6 +20,16 @@
             "timeout": 5000
           }
         ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmd /c \"IF EXIST \"%CLAUDE_PROJECT_DIR%\\.claude\\helpers\\context-guard.cjs\" (node \"%CLAUDE_PROJECT_DIR%\\.claude\\helpers\\context-guard.cjs\") ELSE (exit 0)\"",
+            "timeout": 3000
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -166,7 +176,28 @@
       "Bash(npx @claude-flow*)",
       "Bash(npx claude-flow*)",
       "Bash(node .claude/*)",
-      "mcp__claude-flow__:*"
+      "Bash(pnpm dlx ruflo*)",
+      "Bash(pnpm --package=ecc-universal dlx ecc*)",
+      "mcp__claude-flow__memory_store",
+      "mcp__claude-flow__memory_search",
+      "mcp__claude-flow__memory_search_unified",
+      "mcp__claude-flow__memory_import_claude",
+      "mcp__claude-flow__memory_bridge_status",
+      "mcp__claude-flow__swarm_init",
+      "mcp__claude-flow__swarm_status",
+      "mcp__claude-flow__swarm_health",
+      "mcp__claude-flow__agent_spawn",
+      "mcp__claude-flow__agent_list",
+      "mcp__claude-flow__agent_status",
+      "mcp__claude-flow__hooks_route",
+      "mcp__claude-flow__hooks_post-task",
+      "mcp__claude-flow__hooks_worker-dispatch",
+      "mcp__claude-flow__aidefence_scan",
+      "mcp__claude-flow__aidefence_is_safe",
+      "mcp__claude-flow__aidefence_has_pii",
+      "mcp__claude-flow__hive-mind_init",
+      "mcp__claude-flow__hive-mind_consensus",
+      "mcp__claude-flow__hive-mind_spawn"
     ],
     "deny": [
       "Read(./.env)",
