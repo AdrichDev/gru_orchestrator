@@ -1,17 +1,13 @@
 import fs from "fs";
 import path from "path";
-import YAML from "yaml";
-import { execa } from "execa";
 import { routeTask } from "../task-router/index.js";
 import {
   GruProvider,
   ProviderId,
-  PersonaId,
   ProviderTask,
   ProviderResult,
   RoutingDecision
 } from "../../../shared/src/ports/provider.js";
-import { ProjectConfig, ProvidersFile } from "../../../shared/src/types/config.js";
 import type { SddPhase } from "../../../shared/src/ports/agent.js";
 import type { PlanResult, TaskAssignment } from "../../../shared/src/ports/orchestration.js";
 import type { ReviewResult, TestEvidence } from "../../../shared/src/ports/results.js";
@@ -21,6 +17,9 @@ import { DefaultProviderRegistry } from "../adapters/registry-agentic.js";
 import { DefaultAgentResolver } from "../adapters/resolver.js";
 import { DefaultSupervisionPolicy } from "../adapters/supervision.js";
 import { evaluateAllGates } from "../gates/index.js";
+import { createDelegationRegistry } from "../delegates/index.js";
+import { resolveDelegate } from "../delegates/resolver.js";
+import type { ProviderExecutionRequest } from "../../../shared/src/ports/delegation.js";
 
 // Import Providers via workspace package names
 import { RufloProvider } from "@gru/provider-ruflo";
@@ -32,9 +31,15 @@ import { EngramProvider } from "@gru/provider-engram";
 import { AwesomeCopilotProvider } from "@gru/provider-awesome-copilot";
 import { LocalProvider } from "@gru/provider-local";
 
-// Import Personas
-import { applyCaveman } from "../../../skills/src/personas/caveman/index.js";
-import { applyDevilsAdvocate } from "../../../skills/src/personas/devils-advocate/index.js";
+// Extracted helpers
+import { loadConfig, isProviderEnabled } from "./config.js";
+import { applyPersonas } from "./personas.js";
+import {
+  buildReviewResultFromOutput,
+  buildTestEvidenceFromOutput,
+  parseWorkflowState,
+  makeBlockedReview,
+} from "./agentic-helpers.js";
 
 export const PROVIDERS: Record<ProviderId, GruProvider> = {
   ruflo: new RufloProvider(),
@@ -46,85 +51,6 @@ export const PROVIDERS: Record<ProviderId, GruProvider> = {
   awesomeCopilot: new AwesomeCopilotProvider(),
   local: new LocalProvider()
 };
-
-function loadConfig(): { config: ProjectConfig; providers: ProvidersFile } {
-  try {
-    const configPath = path.resolve(".gru/config.yaml");
-    const providersPath = path.resolve(".gru/providers.yaml");
-
-    const configContent = fs.existsSync(configPath) ? fs.readFileSync(configPath, "utf-8") : "";
-    const providersContent = fs.existsSync(providersPath) ? fs.readFileSync(providersPath, "utf-8") : "";
-
-    return {
-      config: configContent ? (YAML.parse(configContent) as ProjectConfig) : {
-        project: { name: "gru-orchestrator" },
-        routing: {
-          defaultMode: "normal",
-          enableRuflo: true,
-          enableGentlePi: true,
-          enableGentlemanCli: true,
-          enableECC: true,
-          enableDeepagents: true,
-          enableEngram: true,
-          enableAwesomeCopilot: true
-        }
-      },
-      providers: providersContent ? (YAML.parse(providersContent) as ProvidersFile) : { providers: {} }
-    };
-  } catch (err) {
-    return {
-      config: {
-        project: { name: "gru-orchestrator" },
-        routing: {
-          defaultMode: "normal",
-          enableRuflo: true,
-          enableGentlePi: true,
-          enableGentlemanCli: true,
-          enableECC: true,
-          enableDeepagents: true,
-          enableEngram: true,
-          enableAwesomeCopilot: true
-        }
-      },
-      providers: { providers: {} }
-    };
-  }
-}
-
-function isProviderEnabled(providerId: ProviderId, config: ProjectConfig, providers: ProvidersFile): boolean {
-  if (providerId === "local") return true;
-
-  const keyMap: Record<Exclude<ProviderId, "local">, { routingKey: keyof ProjectConfig["routing"]; providerKey: string }> = {
-    ruflo: { routingKey: "enableRuflo", providerKey: "ruflo" },
-    gentlePi: { routingKey: "enableGentlePi", providerKey: "gentlePi" },
-    gentlemanCli: { routingKey: "enableGentlemanCli", providerKey: "gentlemanCli" },
-    ecc: { routingKey: "enableECC", providerKey: "ecc" },
-    deepagents: { routingKey: "enableDeepagents", providerKey: "deepagents" },
-    engram: { routingKey: "enableEngram", providerKey: "engram" },
-    awesomeCopilot: { routingKey: "enableAwesomeCopilot", providerKey: "awesomeCopilot" }
-  };
-
-  const meta = keyMap[providerId];
-  if (!meta) return false;
-
-  const configEnabled = config.routing[meta.routingKey] !== false;
-  const providerDef = providers.providers[meta.providerKey];
-  const providerEnabled = providerDef ? providerDef.enabled !== false : true;
-
-  return configEnabled && providerEnabled;
-}
-
-function applyPersonas(output: string, prompt: string, personas: PersonaId[]): string {
-  let finalOutput = output;
-  for (const persona of personas) {
-    if (persona === "caveman") {
-      finalOutput = applyCaveman(finalOutput);
-    } else if (persona === "devilsAdvocate") {
-      finalOutput = applyDevilsAdvocate(finalOutput, prompt);
-    }
-  }
-  return finalOutput;
-}
 
 export class ProviderUnavailableError extends Error {
   constructor(
@@ -219,63 +145,62 @@ export async function orchestrateTask(prompt: string, forcedProvider?: ProviderI
 
 // ─── Agentic pipeline ────────────────────────────────────────────────────────
 
-function buildReviewResultFromOutput(
-  assignment: TaskAssignment,
-  output: string,
-  success: boolean
-): ReviewResult {
-  const approved = success && !/(BLOCKER|FAIL|REJECT|ERROR)/i.test(output);
-  const blockers = approved ? [] : ["Review did not approve — see output"];
-  return {
-    assignmentId: assignment.id,
-    reviewer: assignment.reviewer,
-    approved,
-    findings: [],
-    blockers,
-    suggestions: [],
-    completedAt: new Date().toISOString(),
-  };
-}
-
-function buildTestEvidenceFromOutput(
-  assignment: TaskAssignment,
-  output: string,
-  success: boolean
-): TestEvidence {
-  const passed = success && !/(FAIL|ERROR|REGRESSION)/i.test(output);
-  return {
-    assignmentId: assignment.id,
-    tester: assignment.tester,
-    passed,
-    suites: [],
-    regressions: passed ? [] : ["Tester reported failure — see output"],
-    completedAt: new Date().toISOString(),
-  };
-}
-
-function parseWorkflowState(result: { artifacts?: string[] }): string {
-  const tag = (result.artifacts ?? []).find((a) => a.startsWith("ruflo:workflow:"));
-  return tag ? (tag.split(":")[3] ?? "unknown") : "unknown";
-}
-
-function makeBlockedReview(assignment: TaskAssignment): ReturnType<typeof buildReviewResultFromOutput> {
-  return {
-    assignmentId: assignment.id,
-    reviewer: assignment.reviewer,
-    approved: false,
-    findings: [],
-    blockers: ["Execution did not complete — review blocked"],
-    suggestions: [],
-    completedAt: new Date().toISOString(),
-  };
-}
-
 export async function orchestrateAgenticTask(
   prompt: string,
   phase: SddPhase = "apply",
-  sddId = "current"
+  sddId = "current",
+  operation?: string,
 ): Promise<PlanResult> {
   const taskId = `agentic_${Date.now()}`;
+
+  // R4: when operation is provided, use delegation registry for capability-based dispatch.
+  if (operation) {
+    const delegationRegistry = createDelegationRegistry();
+    const resolution = await resolveDelegate(operation, delegationRegistry);
+
+    if (resolution.blocked) {
+      const cause = resolution.installHint
+        ? `${resolution.reason} ${resolution.installHint}`
+        : resolution.reason;
+      return {
+        plan: { id: taskId, description: prompt, assignments: [], gates: [], createdAt: new Date().toISOString() },
+        executionResults: [],
+        reviewResults: [],
+        testEvidences: [],
+        gateResults: [],
+        approved: false,
+        blockers: [`delegation:BLOCKED — ${cause}`],
+      };
+    }
+
+    // Non-ruflo delegate: use delegation layer directly (no agentic pipeline).
+    if (resolution.delegateId !== "ruflo") {
+      const delegateReq: ProviderExecutionRequest = {
+        taskId,
+        prompt,
+        operation,
+        contextRefs: [],
+        artifactRefs: [],
+        constraints: [],
+        metadata: { phase, sddId },
+      };
+      const result = await resolution.delegate.execute(delegateReq);
+      const approved = result.status === "COMPLETED";
+      const blocker = approved
+        ? undefined
+        : `${String(resolution.delegateId)}:${result.status} — ${result.error ?? "no output"}`;
+      return {
+        plan: { id: taskId, description: prompt, assignments: [], gates: [], createdAt: new Date().toISOString() },
+        executionResults: [],
+        reviewResults: [],
+        testEvidences: [],
+        gateResults: [],
+        approved,
+        blockers: blocker ? [blocker] : [],
+      };
+    }
+    // delegateId === "ruflo": fall through to the existing agentic pipeline below.
+  }
 
   const policy = new DefaultSupervisionPolicy();
   const registry = new DefaultProviderRegistry();

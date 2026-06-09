@@ -6,25 +6,25 @@ import { DeepagentsProvider } from "@gru/provider-deepagents";
 import { EngramProvider } from "@gru/provider-engram";
 import { LocalProvider } from "@gru/provider-local";
 
-import type { DelegationProviderId } from "../../../shared/src/ports/delegation.js";
+import type { DelegationProviderId, ProviderDelegate } from "../../../shared/src/ports/delegation.js";
 import { RufloProviderAdapter } from "../adapters/ruflo.js";
 import { SimpleProviderDelegate, AgenticProviderDelegate } from "./base.js";
 import { AwesomeCopilotDelegate } from "./awesome-copilot.js";
 import { Context7Delegate } from "./context7.js";
 import { DefaultDelegationRegistry } from "./registry.js";
 import { flagsFor } from "./capabilities.js";
-import type { ProviderDelegate } from "../../../shared/src/ports/delegation.js";
 
 export * from "./base.js";
 export * from "./capabilities.js";
 export * from "./registry.js";
+export * from "./resolver.js";
 export { AwesomeCopilotDelegate } from "./awesome-copilot.js";
 export { Context7Delegate } from "./context7.js";
 
 /**
  * Builds the delegation registry over the EXISTING provider runtimes.
  * Ruflo uses the agentic façade (workflow lifecycle); the rest use the simple
- * façade. Context7 is registered but PLANNED/UNAVAILABLE.
+ * façade. Context7 probes the real MCP server on detect().
  */
 export function createDelegationRegistry(): DefaultDelegationRegistry {
   const registry = new DefaultDelegationRegistry();

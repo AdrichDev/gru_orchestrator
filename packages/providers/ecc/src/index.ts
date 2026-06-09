@@ -22,14 +22,16 @@ export class EccProvider implements GruProvider {
   }
   async run(task: ProviderTask): Promise<ProviderResult> {
     try {
-      const result = await execa("pnpm", ["--package=ecc-universal", "dlx", "ecc", "consult", task.prompt], { reject: false });
+      const result = await execa("pnpm", ["--package=ecc-universal", "dlx", "ecc", "doctor"], { reject: false });
+      // exit 0 = all ok, exit 1 = warnings — both are valid diagnostic results, not failures
+      const success = (result.exitCode ?? 2) <= 1;
       return {
         providerId: this.id,
-        success: result.exitCode === 0,
+        success,
         output: result.stdout || result.stderr,
-        error: result.exitCode === 0 ? undefined : result.stderr,
+        error: success ? undefined : result.stderr,
         exitCode: result.exitCode,
-        executedCommand: `pnpm --package=ecc-universal dlx ecc consult ${JSON.stringify(task.prompt)}`
+        executedCommand: "pnpm --package=ecc-universal dlx ecc doctor"
       };
     } catch (error) {
       return { providerId: this.id, success: false, output: "", error: error instanceof Error ? error.message : String(error) };

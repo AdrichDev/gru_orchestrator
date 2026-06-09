@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeAll } from "vitest";
 import type {
   GruProvider,
   ProviderAvailability,
@@ -21,6 +21,7 @@ import {
 import { Context7Delegate } from "../context7.js";
 import { DefaultDelegationRegistry } from "../registry.js";
 import { flagsFor, capabilitiesFor, allowlistFor } from "../capabilities.js";
+import { resolveDelegate } from "../resolver.js";
 
 // ── Test doubles ────────────────────────────────────────────────────────────
 
@@ -229,36 +230,56 @@ describe("agentic delegate honest status", () => {
   });
 });
 
-// ── Context7 (PLANNED / always UNAVAILABLE) ───────────────────────────────────
+// ── Context7 (real MCP probe with injected deps) ─────────────────────────────
 
 describe("Context7 delegate", () => {
-  it("detect() → UNAVAILABLE + PLANNED (no MCP env)", async () => {
-    delete process.env.GRU_CONTEXT7_MCP;
-    const d = await new Context7Delegate().detect();
-    expect(d.status).toBe("UNAVAILABLE");
-    expect(d.integration).toBe("PLANNED");
+  const mockConfig = { command: "npx", args: ["-y", "--package=@upstash/context7-mcp", "--", "context7-mcp"] };
+
+  it("detect() without config → UNAVAILABLE + PLANNED", async () => {
+    const d = new Context7Delegate(() => null, async () => false);
+    const detection = await d.detect();
+    expect(detection.status).toBe("UNAVAILABLE");
+    expect(detection.integration).toBe("PLANNED");
+    expect(detection.installHint).toBeTruthy();
   });
 
-  it("detect() stays UNAVAILABLE even if GRU_CONTEXT7_MCP is set", async () => {
-    process.env.GRU_CONTEXT7_MCP = "https://example.invalid/mcp";
-    try {
-      const d = await new Context7Delegate().detect();
-      expect(d.status).toBe("UNAVAILABLE");
-      expect(d.integration).toBe("PLANNED");
-    } finally {
-      delete process.env.GRU_CONTEXT7_MCP;
-    }
+  it("detect() with config but probe fails → UNAVAILABLE + READY", async () => {
+    const d = new Context7Delegate(() => mockConfig, async () => false);
+    const detection = await d.detect();
+    expect(detection.status).toBe("UNAVAILABLE");
+    expect(detection.integration).toBe("READY");
+    expect(detection.reason).toMatch(/did not respond/);
   });
 
-  it("documentation.fetch (allowed op, no MCP) → UNAVAILABLE, no fabricated docs", async () => {
-    const res = await new Context7Delegate().execute(req("documentation.fetch"));
+  it("detect() with config and probe succeeds → AVAILABLE + READY", async () => {
+    const d = new Context7Delegate(() => mockConfig, async () => true);
+    const detection = await d.detect();
+    expect(detection.status).toBe("AVAILABLE");
+    expect(detection.integration).toBe("READY");
+  });
+
+  it("documentation.fetch (allowed op) when UNAVAILABLE → no fabricated docs", async () => {
+    const d = new Context7Delegate(() => null, async () => false);
+    const res = await d.execute(req("documentation.fetch"));
     expect(res.status).toBe("UNAVAILABLE");
     expect(res.output).toBeUndefined();
   });
 
-  it("unknown op → UNSUPPORTED", async () => {
-    const res = await new Context7Delegate().execute(req("implement"));
+  it("documentation.fetch when AVAILABLE → UNAVAILABLE (tool calling not wired), no fabricated docs", async () => {
+    const d = new Context7Delegate(() => mockConfig, async () => true);
+    const res = await d.execute(req("documentation.fetch"));
+    // Server is reachable but tool calling is not implemented yet.
+    // Key constraint: no fabricated documentation in output.
+    expect(res.output).toBeUndefined();
+    expect(res.status).toBe("UNAVAILABLE");
+  });
+
+  it("unknown op → UNSUPPORTED without calling probe", async () => {
+    const probeSpy = vi.fn(async () => false);
+    const d = new Context7Delegate(() => mockConfig, probeSpy);
+    const res = await d.execute(req("implement"));
     expect(res.status).toBe("UNSUPPORTED");
+    expect(probeSpy).not.toHaveBeenCalled();
   });
 });
 
@@ -267,7 +288,8 @@ describe("Context7 delegate", () => {
 describe("delegation registry", () => {
   it("UNAVAILABLE delegates (context7, engram) are excluded from getAvailable()", async () => {
     const registry = new DefaultDelegationRegistry();
-    registry.register({ id: "context7", delegate: new Context7Delegate(), capabilities: flagsFor("context7") });
+    // Use injected probe that always fails → UNAVAILABLE
+    registry.register({ id: "context7", delegate: new Context7Delegate(() => null, async () => false), capabilities: flagsFor("context7") });
     registry.register({
       id: "engram",
       delegate: new SimpleProviderDelegate("engram", fakeSimpleProvider({ available: false })),
@@ -341,5 +363,65 @@ describe("portable references", () => {
 
     expect(res.artifacts).toContain("ruflo:workflow:wf-1:completed");
     expect(res.artifacts?.some((a) => ABSOLUTE_PATH.test(a))).toBe(false);
+  });
+});
+
+// ── resolveDelegate (R4) ──────────────────────────────────────────────────────
+
+describe("resolveDelegate", () => {
+  function buildRegistry(eccAvailable: boolean): DefaultDelegationRegistry {
+    const registry = new DefaultDelegationRegistry();
+    registry.register({
+      id: "ecc",
+      delegate: new SimpleProviderDelegate("ecc", fakeSimpleProvider({ available: eccAvailable })),
+      capabilities: flagsFor("ecc"),
+    });
+    registry.register({
+      id: "context7",
+      delegate: new Context7Delegate(() => null, async () => false),
+      capabilities: flagsFor("context7"),
+    });
+    return registry;
+  }
+
+  it("operation supported by available delegate → blocked: false", async () => {
+    const registry = buildRegistry(true);
+    const result = await resolveDelegate("consult", registry);
+    expect(result.blocked).toBe(false);
+    if (!result.blocked) {
+      expect(result.delegateId).toBe("ecc");
+    }
+  });
+
+  it("operation not supported by any delegate → blocked: true with reason", async () => {
+    const registry = buildRegistry(true);
+    const result = await resolveDelegate("unsupported.xyz.operation", registry);
+    expect(result.blocked).toBe(true);
+    if (result.blocked) {
+      expect(result.reason).toContain("unsupported.xyz.operation");
+      expect(result.installHint).toBeTruthy();
+    }
+  });
+
+  it("delegate available but does not support op → skipped, BLOCKED", async () => {
+    const registry = buildRegistry(true);
+    // ecc supports "consult" and "review" but not "implement"
+    const result = await resolveDelegate("implement", registry);
+    // ruflo not in this test registry → BLOCKED
+    expect(result.blocked).toBe(true);
+  });
+
+  it("all delegates UNAVAILABLE → blocked: true", async () => {
+    const registry = buildRegistry(false);
+    const result = await resolveDelegate("consult", registry);
+    // ecc unavailable → excluded from getAvailable() → BLOCKED
+    expect(result.blocked).toBe(true);
+  });
+
+  it("does not silently fall back to a different operation", async () => {
+    const registry = buildRegistry(true);
+    const result = await resolveDelegate("memory.store", registry);
+    // ecc does not support memory.store → BLOCKED (no silent remap)
+    expect(result.blocked).toBe(true);
   });
 });
