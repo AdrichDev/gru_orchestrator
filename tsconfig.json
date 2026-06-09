@@ -50,7 +50,6 @@
         "packages/providers/deepagents/src/index.ts"
       ]
     },
-    "ignoreDeprecations": "6.0",
     "types": [
       "node"
     ]
