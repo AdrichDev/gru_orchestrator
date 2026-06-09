@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "@juicesharp/rpiv-ask-user-question": "latest",
+    "@juicesharp/rpiv-todo": "latest",
+    "gentle-engram": "latest",
+    "gentle-pi": "latest",
+    "pi-btw": "latest",
+    "pi-intercom": "latest",
+    "pi-mcp-adapter": "^2.6.0",
+    "pi-subagents": "latest",
+    "pi-web-access": "latest"
+  }
+}

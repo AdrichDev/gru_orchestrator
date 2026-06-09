@@ -19,6 +19,27 @@
         "CLAUDE_FLOW_MEMORY_BACKEND": "hybrid"
       },
       "autoStart": false
+    },
+    "context7": {
+      "args": [
+        "-y",
+        "--package=@upstash/context7-mcp@2.2.5",
+        "--",
+        "context7-mcp"
+      ],
+      "command": "npx"
+    },
+    "engram": {
+      "command": "node",
+      "args": [
+        "-e",
+        "const { spawn } = require('node:child_process'); const bin = process.env.ENGRAM_BIN || 'engram'; const child = spawn(bin, ['mcp', '--tools=agent'], { stdio: 'inherit' }); child.on('error', () => process.exit(127)); child.on('exit', (code, signal) => { if (typeof code === 'number') process.exit(code); process.kill(process.pid, signal || 'SIGTERM'); });"
+      ],
+      "env": {
+        "ENGRAM_BIN": "C:\\Users\\achoz\\AppData\\Local\\engram\\bin\\engram.exe"
+      },
+      "lifecycle": "eager",
+      "directTools": true
     }
   }
 }
