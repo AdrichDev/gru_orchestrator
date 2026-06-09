@@ -12,13 +12,13 @@
 
 ---
 
-### 🌐 Idiomas / Languages / 语言 / Langues / Sprachen
-
-* 🇪🇸 **[Español](README.md)**
-* 🇺🇸 **[English](docs/readme/README.en.md)**
-* 🇨🇳 **[中文](docs/readme/README.zh.md)**
-* 🇫🇷 **[Français](docs/readme/README.fr.md)**
-* 🇩🇪 **[Deutsch](docs/readme/README.de.md)**
+<p align="center">
+  🇪🇸 <a href="README.md"><strong>Español</strong></a> &nbsp;|&nbsp;
+  🇺🇸 <a href="docs/readme/README.en.md"><strong>English</strong></a> &nbsp;|&nbsp;
+  🇨🇳 <a href="docs/readme/README.zh.md"><strong>中文</strong></a> &nbsp;|&nbsp;
+  🇫🇷 <a href="docs/readme/README.fr.md"><strong>Français</strong></a> &nbsp;|&nbsp;
+  🇩🇪 <a href="docs/readme/README.de.md"><strong>Deutsch</strong></a>
+</p>
 
 ---
 
