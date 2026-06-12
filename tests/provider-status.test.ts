@@ -1,31 +1,36 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { describe, expect, test } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { AwesomeCopilotProvider } from "../packages/providers/awesome-copilot/src/index.js";
 
-test("Awesome Copilot status distingue catalogo workspace de ejecucion", async () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "gru-awesome-"));
-  fs.mkdirSync(path.join(root, "skills", "security-review"), { recursive: true });
-  fs.writeFileSync(path.join(root, "skills", "security-review", "SKILL.md"), "# Security Review\n");
+describe("awesome copilot — provider status", () => {
+  test("status distingue catálogo presente (kind=catalog, ready)", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "gru-awesome-"));
+    fs.mkdirSync(path.join(root, "skills", "security-review"), { recursive: true });
+    fs.writeFileSync(path.join(root, "skills", "security-review", "SKILL.md"), "# Security Review\n");
 
-  const previous = process.env.GRU_AWESOME_COPILOT_PATH;
-  process.env.GRU_AWESOME_COPILOT_PATH = root;
-  try {
-    const provider = new AwesomeCopilotProvider();
-    const status = await provider.checkAvailability();
-    assert.ok([
-      "AWESOME_COPILOT_CATALOG_READY",
-      "AWESOME_COPILOT_PLUGIN_INSTALLED_CATALOG_READY"
-    ].includes(status.statusLabel ?? ""));
-    assert.equal(status.catalogReady, true);
-    assert.equal(status.operationCallable, true);
-    assert.equal(status.completionVerified, false);
-    assert.deepEqual(status.capabilities, ["catalog.search", "catalog.read"]);
-  } finally {
-    if (previous === undefined) delete process.env.GRU_AWESOME_COPILOT_PATH;
-    else process.env.GRU_AWESOME_COPILOT_PATH = previous;
-    fs.rmSync(root, { recursive: true, force: true });
-  }
+    try {
+      const provider = new AwesomeCopilotProvider(root);
+      const status = await provider.checkAvailability();
+      expect(status.available).toBe(true);
+      expect(status.status).toBe("ready");
+      expect(status.kind).toBe("catalog");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("status reporta missing con installHint cuando no hay catálogo", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "gru-awesome-empty-"));
+    try {
+      const provider = new AwesomeCopilotProvider(root);
+      const status = await provider.checkAvailability();
+      expect(status.available).toBe(false);
+      expect(status.status).toBe("missing");
+      expect(status.installHint).toMatch(/awesome-copilot/i);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
 });

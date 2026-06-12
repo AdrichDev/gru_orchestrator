@@ -65,13 +65,46 @@ export function resolveViability(signals: ClassificationSignals, _riskScore: num
   return "ready";
 }
 
+// Bilingual (EN + ES) risk patterns. The harness speaks Spanish — risk
+// detection MUST understand Spanish prompts or the human-approval gate
+// can be silently bypassed (e.g. "borra la base de datos de producción").
 const PROMPT_PATTERNS: Array<[keyof ClassificationSignals, RegExp]> = [
-  ["touchesProduction", /\bprod(uction)?\b|deploy|release|publish/i],
-  ["touchesSecurityOrAuth", /\bsecurity\b|\bauth\b|\bcve\b|\bcredential\b|\bsecret\b|\btoken\b/i],
-  ["isIrreversible", /\bdelete\b|\bdrop\b|\bremove\b|\bmigrat/i],
-  ["touchesPersistentData", /\bmigrat|\bdatabase\b|\bschema\b/i],
-  ["touchesMainBranch", /\bmain\b|\bmaster\b/i],
-  ["requiresNewArchitecture", /\bnew architecture\b|\bredesign\b/i],
+  [
+    "touchesProduction",
+    /\bprod(uction)?\b|\bproducci[oó]n\b|\bproductivo\b|deploy|despleg|despliegue|release|publish|publicar?\b|\ben\s+vivo\b|\blive\b|\bhotfix\b/i,
+  ],
+  [
+    "touchesSecurityOrAuth",
+    /\bsecurity\b|\bseguridad\b|\bauth\b|\bautenticaci[oó]n\b|\bautorizaci[oó]n\b|\bcve\b|\bcredencial(es)?\b|\bcredential\b|\bsecret\b|\bsecreto\b|\btoken\b|\bcontrase[ñn]a\b|\bpassword\b|\.env\b|\bapi[\s_-]?keys?\b/i,
+  ],
+  [
+    "isIrreversible",
+    // Verbos destructivos ES/EN. "limpia/descarta/formatea" solo cuentan en
+    // contexto de datos/almacenamiento para no bloquear "limpia el código" o
+    // "formatea el código con prettier".
+    /\bdelete\b|\bdrop\b|\bremove\b|\bmigrat|\bborra(r|d[oa])?\b|\belimina(r|d[oa])?\b|\bdestru(ye|ir)\b|\bpurga(r)?\b|\btrunca(r|te)?\b|\bmigraci[oó]n\b|\bvac[ií]a(r)?\b|\bresetea(r)?\b|\bwipe\b|\bsuprim(e|ir)\b|\bdeshazte\b|\b(limpia(r)?|descarta(r)?)\b[^.]*\b(registros?|tablas?|datos|base|esquema|schema|logs?|cambios)\b|\bformatea(r)?\b[^.]*\b(disco|unidad|partici[oó]n|pendrive|usb|drive|entorno)\b/i,
+  ],
+  [
+    "isIrreversible",
+    // Comandos crudos shell/SQL/git destructivos incrustados en el prompt.
+    /\brm\s+-[a-z]*r[a-z]*\b|\brmdir\b|\bdel\s+\/[sq]\b|\bgit\s+reset\s+--hard\b|\bgit\s+clean\s+-[a-z]*f|--force\b|\bforce[- ]push\b|\bfuerza\s+(el\s+)?push\b|\btruncate\s+table\b|\bdelete\s+from\b|\bdrop\s+(database|table|schema)\b|\bsudo\s+rm\b/i,
+  ],
+  [
+    "touchesPersistentData",
+    /\bmigrat|\bmigraci[oó]n\b|\bdatabase\b|\bbase\s+de\s+datos\b|\bschema\b|\besquema\b|\bbackup\b|\bcopia\s+de\s+seguridad\b/i,
+  ],
+  [
+    "touchesMainBranch",
+    /\bmain\b|\bmaster\b|\brama\s+principal\b|\bpush\s+(a|to)\s+main\b/i,
+  ],
+  [
+    "requiresNewArchitecture",
+    /\bnew architecture\b|\bredesign\b|\bnueva\s+arquitectura\b|\bredise[ñn](o|ar)\b/i,
+  ],
+  [
+    "generatesFinancialCost",
+    /\bgasto\b|\bcoste\b|\bcosto\b|\bfacturaci[oó]n\b|\bbilling\b|\bcompra(r)?\b|\bpago(s)?\b|\bsuscripci[oó]n\b|\bcr[eé]ditos\b|\bupgrade\b|\bplan\s+(superior|premium|pro|enterprise)\b|\b(sube|cambia|mejora)\b[^.]*\bplan\b|\bprovision(a|ar|ing)?\b.*\b(aws|gcp|azure|cloud)\b|\b(aws|gcp|azure)\b.*\bprovision/i,
+  ],
 ];
 
 export function inferSignalsFromPrompt(prompt: string): Partial<ClassificationSignals> {

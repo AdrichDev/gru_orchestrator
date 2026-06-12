@@ -396,11 +396,11 @@ Providers return:
 Gru's kernel evaluates certain behavioral traits directly during orchestration:
 
 - **devilsAdvocate**: Evaluates prompts and router assignment. Detects risks, blocks unsafe executions (like writes outside the workspace), and issues warnings.
-- **caveman**: Formates and compresses system outputs into a direct, no-nonsense command language.
+- **caveman**: Formats and compresses system outputs into a direct, no-nonsense command language.
 
 ---
 
-## SCALATION TO RUFLO
+## ESCALATION TO RUFLO
 
 Activate if:
 - Level 4 confirmed.

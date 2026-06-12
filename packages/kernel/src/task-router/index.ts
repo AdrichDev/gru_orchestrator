@@ -131,10 +131,13 @@ export function routeTask(task: ProviderTask): RoutingDecision {
     .sort((a, b) => b[1] - a[1])
     .map(([pId]) => pId as ProviderId);
 
-  // Calculate confidence score (scale 0-100)
+  // Calculate confidence score (scale 0-100).
+  // No keyword matched → confidence 0: the fallback to 'local' is a guess,
+  // and Devil's Advocate must surface a low-confidence warning instead of
+  // letting a fake 100% silence it.
   let confidence = 0;
-  if (bestProvider === "local") {
-    confidence = 100;
+  if (maxScore === 0) {
+    confidence = 0;
   } else {
     const totalScore = Object.values(providerScores).reduce((a, b) => a + b, 0);
     confidence = Math.round((maxScore / totalScore) * 100);

@@ -4,7 +4,9 @@ import {
   getProviderStatuses,
   orchestrateTask,
   orchestrateAgenticTask,
-  ProviderUnavailableError
+  ProviderUnavailableError,
+  HumanApprovalRequiredError,
+  DelegationBlockedError
 } from "../../../packages/kernel/src/orchestrator/index.js";
 import type { ProviderId } from "../../../packages/shared/src/ports/provider.js";
 import type { SddPhase } from "../../../packages/shared/src/ports/agent.js";
@@ -41,7 +43,41 @@ async function runStatus(strict: boolean): Promise<void> {
   }
 }
 
-async function askForFallback(error: ProviderUnavailableError, prompt: string): Promise<void> {
+async function askForHumanApproval(error: HumanApprovalRequiredError, prompt: string): Promise<void> {
+  console.error(`\n[APROBACIÓN REQUERIDA] Nivel ${error.classification.level} — ${error.classification.levelName}`);
+  console.error(`Motivos: ${error.reasons.join("; ")}`);
+
+  if (!process.stdin.isTTY) {
+    console.error("Entorno no interactivo: la tarea NO se ejecuta sin aprobación humana explícita.");
+    process.exitCode = 2;
+    return;
+  }
+
+  const rl = readline.createInterface({ input, output });
+  try {
+    const answer = await rl.question("¿Apruebas la ejecución de esta tarea? (si/NO): ");
+    if (!/^s[ií]$/i.test(answer.trim())) {
+      console.log("Tarea cancelada por el usuario. No se ha ejecutado nada.");
+      process.exitCode = 2;
+      return;
+    }
+  } finally {
+    rl.close();
+  }
+
+  try {
+    await orchestrateTask(prompt, undefined, { approved: true });
+  } catch (error2) {
+    if (error2 instanceof ProviderUnavailableError) {
+      await askForFallback(error2, prompt, true);
+      return;
+    }
+    console.error("Error real al orquestar la tarea:", error2);
+    process.exitCode = 1;
+  }
+}
+
+async function askForFallback(error: ProviderUnavailableError, prompt: string, approved = false): Promise<void> {
   console.error(`\n[BLOCKED] ${error.message}`);
   if (error.installHint) console.error(`Solución: ${error.installHint}`);
 
@@ -70,7 +106,7 @@ async function askForFallback(error: ProviderUnavailableError, prompt: string): 
       process.exitCode = 2;
       return;
     }
-    await orchestrateTask(prompt, normalized as ProviderId);
+    await orchestrateTask(prompt, normalized as ProviderId, { approved });
   } finally {
     rl.close();
   }
@@ -130,6 +166,15 @@ async function main(): Promise<void> {
   try {
     await orchestrateTask(commandOrPrompt);
   } catch (error) {
+    if (error instanceof HumanApprovalRequiredError) {
+      await askForHumanApproval(error, commandOrPrompt);
+      return;
+    }
+    if (error instanceof DelegationBlockedError) {
+      console.error(`\n[BLOCKED] ${error.message}`);
+      process.exitCode = 2;
+      return;
+    }
     if (error instanceof ProviderUnavailableError) {
       await askForFallback(error, commandOrPrompt);
       return;

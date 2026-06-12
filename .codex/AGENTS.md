@@ -372,11 +372,11 @@ Providers return:
 Gru's kernel evaluates certain behavioral traits directly during orchestration:
 
 - **devilsAdvocate**: Evaluates prompts and router assignment. Detects risks, blocks unsafe executions (like writes outside the workspace), and issues warnings.
-- **caveman**: Formates and compresses system outputs into a direct, no-nonsense command language.
+- **caveman**: Formats and compresses system outputs into a direct, no-nonsense command language.
 
 ---
 
-## SCALATION TO RUFLO
+## ESCALATION TO RUFLO
 
 Activate if:
 - Level 4 confirmed.
@@ -559,6 +559,39 @@ HIGH   → Repo analyzed or Ruflo read the project.
 MEDIUM → User responded, partial memory.
 LOW    → Only assumptions.
 ```
+
+---
+
+## Scope Completion Protocol
+
+After EACH scope item completes → generate caveman summary → save to Engram → surface to user.
+
+### Caveman format (required)
+
+```text
+SCOPE [sdd-name] DONE.
+LEVEL: [0-4] — [Trivial|Small|Medium|Large|Critical].
+PROVIDERS: [local, engram, gentlePi, ruflo, ecc, context7, awesomeCopilot, ...].
+PROCEDURE: [step1 → step2 → step3].
+FILES: [N new | M modified].
+TESTS: [N new — all green].
+DECISION: [architectural decision if any, or "none"].
+```
+
+### Save to Engram
+
+```text
+KEY:   project:gru-orchestrator:scope:[sdd-name]
+VALUE: [full caveman summary]
+LEVEL: [level]
+```
+
+### Rules
+
+- Do not summarize until all tests pass.
+- Only providers actually used — never fabricate.
+- PROCEDURE = real steps executed, not the theoretical workflow.
+- If scope was PARTIAL → indicate PARTIAL + reason.
 
 ---
 

@@ -1,6 +1,9 @@
 import fs from "fs";
 import path from "path";
 import { routeTask } from "../task-router/index.js";
+import { classifyTask } from "../task-router/classifier.js";
+import type { TaskClassification } from "../../../shared/src/ports/classification.js";
+import { reviewDelegation } from "../../../skills/src/personas/devils-advocate/index.js";
 import {
   GruProvider,
   ProviderId,
@@ -64,15 +67,70 @@ export class ProviderUnavailableError extends Error {
   }
 }
 
+export class HumanApprovalRequiredError extends Error {
+  constructor(
+    public readonly classification: TaskClassification,
+    public readonly reasons: string[],
+  ) {
+    super(
+      `La tarea requiere aprobación humana (nivel ${classification.level} — ${classification.levelName}). Motivos: ${reasons.join("; ")}`,
+    );
+    this.name = "HumanApprovalRequiredError";
+  }
+}
+
+export class DelegationBlockedError extends Error {
+  constructor(
+    public readonly providerId: ProviderId,
+    public readonly reason: string,
+  ) {
+    super(`Delegación bloqueada por Devil's Advocate: ${reason}`);
+    this.name = "DelegationBlockedError";
+  }
+}
+
+function approvalReasons(classification: TaskClassification): string[] {
+  const reasons: string[] = [];
+  const s = classification.signals;
+  if (s.isIrreversible) reasons.push("acción irreversible/destructiva");
+  if (s.touchesProduction) reasons.push("toca producción o despliegue");
+  if (s.touchesSecurityOrAuth) reasons.push("toca seguridad o auth");
+  if (s.touchesMainBranch) reasons.push("toca rama principal");
+  if (s.generatesFinancialCost) reasons.push("genera gasto económico");
+  if (s.touchesPersistentData) reasons.push("toca datos persistentes");
+  if (classification.level >= 4) reasons.push("nivel 4 — Crítica");
+  return reasons.length > 0 ? reasons : ["clasificación requiere aprobación"];
+}
+
+export interface OrchestrateOptions {
+  /** Explicit human approval for tasks gated by risk classification. */
+  approved?: boolean;
+}
+
 export async function getProviderStatuses() {
   return Promise.all(Object.values(PROVIDERS).map((provider) => provider.checkAvailability()));
 }
 
-export async function orchestrateTask(prompt: string, forcedProvider?: ProviderId): Promise<string> {
+export async function orchestrateTask(
+  prompt: string,
+  forcedProvider?: ProviderId,
+  options: OrchestrateOptions = {},
+): Promise<string> {
   const taskId = `task_${Date.now()}`;
   const task: ProviderTask = { taskId, prompt };
   const decision = routeTask(task);
   const { config, providers } = loadConfig();
+
+  // ── Risk gate (mandatory, runs BEFORE any provider executes) ──────────────
+  // Human-in-the-loop rule: destructive, production, security, main-branch,
+  // financial-cost, and Level 4 tasks never run without explicit approval.
+  const classification = classifyTask(prompt);
+  if (
+    (classification.requiresHumanApproval || classification.viability === "needs_approval") &&
+    !options.approved
+  ) {
+    throw new HumanApprovalRequiredError(classification, approvalReasons(classification));
+  }
 
   const providerId = forcedProvider ?? decision.provider;
   if (!isProviderEnabled(providerId, config, providers)) {
@@ -95,6 +153,15 @@ export async function orchestrateTask(prompt: string, forcedProvider?: ProviderI
     );
   }
 
+  // ── Devil's Advocate pre-flight veto ───────────────────────────────────────
+  const devilFinding = reviewDelegation({ prompt, providerId, decision, availability });
+  if (devilFinding.blocked) {
+    throw new DelegationBlockedError(providerId, devilFinding.reason ?? "motivo no especificado");
+  }
+  for (const warning of devilFinding.warnings) {
+    console.warn(`[DEVIL] ${warning}`);
+  }
+
   console.log(`Gru recibe tarea: ${prompt}`);
   console.log(`Provider elegido: ${providerId} (Confianza: ${decision.confidence}%)`);
   if (decision.personas.length > 0) console.log(`Personas aplicadas: ${decision.personas.join(", ")}`);
@@ -112,6 +179,12 @@ export async function orchestrateTask(prompt: string, forcedProvider?: ProviderI
   const runLog = {
     taskId,
     prompt,
+    classification: {
+      level: classification.level,
+      levelName: classification.levelName,
+      viability: classification.viability,
+      approvedByHuman: options.approved ?? false,
+    },
     decision: {
       routedProvider: decision.provider,
       executedProvider: providerId,

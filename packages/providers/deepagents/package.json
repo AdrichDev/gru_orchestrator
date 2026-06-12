@@ -1,8 +1,15 @@
 {
   "name": "@gru/provider-deepagents",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "dependencies": {
+    "@gru/shared": "workspace:*",
     "@langchain/anthropic": "^1.4.0",
     "@langchain/core": "^1.1.48",
     "deepagents": "^1.10.2",

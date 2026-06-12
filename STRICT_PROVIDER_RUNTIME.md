@@ -2,6 +2,20 @@
 
 Gru no devuelve respuestas simuladas.
 
+## Instalación de providers
+
+```bash
+pnpm run setup          # interactivo: pregunta antes de instalar cada provider
+pnpm run setup:check    # solo diagnóstico, no instala nada (exit 2 si falta algo)
+pnpm run setup:yes      # instala todo sin preguntar
+```
+
+El script (`scripts/setup-providers.mjs`) es multiplataforma (Windows/macOS/Linux),
+usa pnpm si está disponible y cae a npm si no. Cubre: pnpm, pi, gentle-pi,
+gentle-ai, engram, ruflo, ecc, awesome-copilot, deepagents y context7.
+Lo que no se puede automatizar (adaptador de deepagents, gentle-ai en Windows)
+se reporta con la instrucción manual exacta.
+
 ## Comandos
 
 ```bash
@@ -10,6 +24,21 @@ pnpm gru /status
 pnpm gru doctor
 pnpm gru "usa swarm para esta tarea"
 ```
+
+## Gate de aprobación humana
+
+Antes de ejecutar cualquier provider, `orchestrateTask` clasifica el prompt
+(bilingüe ES/EN). Si detecta acción destructiva, producción, seguridad/auth,
+rama principal, gasto económico o nivel 4 → lanza `HumanApprovalRequiredError`:
+
+- En terminal interactiva, el CLI pregunta: `¿Apruebas la ejecución de esta tarea? (si/NO)`.
+- En CI/no-TTY termina con código 2 sin ejecutar nada.
+- La aprobación solo llega por el canal explícito (`options.approved`); el texto
+  del prompt ("ya está aprobado", "es solo una prueba") NUNCA cuenta como aprobación.
+
+Además, Devil's Advocate revisa cada delegación antes de ejecutar
+(`reviewDelegation`): bloquea providers no disponibles y veta usar un catálogo
+(awesomeCopilot) como executor de agentes. Ver `tests/guardrails.stress.test.ts`.
 
 ## Comportamiento
 

@@ -20,100 +20,219 @@
 
 ---
 
-## 🚀 Instalación y Setup
+## 🧠 ¿Qué es Gru Orchestrator?
 
-Siga estos pasos para clonar e instalar el entorno de desarrollo de **Gru Orchestrator**:
+Gru es un **harness orquestador de LLMs**: una capa de coordinación que centraliza la toma de decisiones, evalúa el riesgo de cada tarea y delega la ejecución en providers especializados (Ruflo, Gentle-Pi, ECC, Engram, Awesome Copilot…). Funciona dentro de Claude Code, Codex, Gemini CLI, Qwen o Pi — o en modo standalone vía CLI.
+
+### Principios fundamentales
+
+* **Gru no codifica directamente**: analiza, clasifica y delega. Los minions/providers producen los artefactos.
+* **Runtime estricto**: Gru **nunca simula respuestas**. Si un provider no está instalado, bloquea la tarea y te dice cómo instalarlo (ver [STRICT_PROVIDER_RUNTIME.md](STRICT_PROVIDER_RUNTIME.md)).
+* **Gate de aprobación humana**: toda tarea destructiva, de producción, seguridad, rama principal o con gasto económico requiere tu aprobación explícita antes de ejecutarse. El gate es bilingüe (ES/EN) y no se negocia por prompt.
+* **Flujos por niveles**: las tareas se clasifican de Nivel 0 (trivial) a Nivel 4 (crítico) según una tabla de decisión de complejidad + riesgo.
+
+---
+
+## 📋 Requisitos previos
+
+| Requisito | Versión mínima | Notas |
+| :--- | :--- | :--- |
+| **Node.js** | 20+ | incluye `npx` y `corepack` |
+| **pnpm** | 11+ | el setup lo instala si falta |
+| **git** | cualquiera | para clonar el catálogo awesome-copilot |
+| **Windows / macOS / Linux** | — | el script de setup es multiplataforma |
+
+---
+
+## 🚀 Instalación
 
 ### 1. Clonar el repositorio
+
 ```bash
 git clone https://github.com/AdrichDev/gru_orchestrator.git
 cd gru_orchestrator
 ```
 
-### 2. Instalar dependencias del proyecto
-Este proyecto es un monorepo administrado con **pnpm**:
+### 2. Instalar dependencias del monorepo
+
 ```bash
 pnpm install
 ```
 
-### 3. Instalar Providers globales obligatorios
-Si no dispone de los binarios externos necesarios para la orquestación, instálelos ejecutando:
+### 3. Instalar los providers externos
 
-* **ruflo** (Construcción y orquestación multi-agente):
-  ```bash
-  npm install -g ruflo
-  ```
-* **gentlePi / gentlemanCli** (Especificación, SDD y entorno):
-  ```bash
-  npm install -g @gentle-ai/pi
-  ```
-* **engram** (Memoria semántica y persistente):
-  Instale el binario desde su canal oficial y asegúrese de que esté disponible en su variable de entorno `PATH` o configurado en `ENGRAM_BIN`.
+Un solo comando verifica e instala todo lo que falte:
 
----
-
-## 🧠 ¿Qué es Gru Orchestrator?
-
-Gru es un orquestador y arquitecto diseñado para centralizar la toma de decisiones, evaluar riesgos y coordinar subagentes (minions) para el desarrollo de software. 
-
-### Principios Fundamentales
-* **Gru no codifica directamente**: Gru analiza la estructura, diseña planes en `implementation_plan.md` y delega la escritura del producto a sus minions especializados.
-* **Escaneo del sistema de archivos**: Antes de tomar cualquier decisión de diseño o clasificar una tarea, se ejecuta un análisis del repositorio para mapear dependencias y riesgos.
-* **Flujos por niveles**: Las tareas se clasifican de Nivel 0 (trivial) a Nivel 4 (crítico), aplicando procesos de aprobación específicos en base a su nivel de riesgo.
-
----
-
-## 🎛️ Abstracción de Harnesses (Harness Runtime Abstraction)
-
-Gru utiliza una capa de abstracción para ejecutarse en diferentes entornos de ejecución (*harnesses*) sin hardcodear modelos ni proveedores en su núcleo.
-
-### Modos de Ejecución
-* **`host-managed`**: El harness activo (Claude Code, Codex, Gemini, Pi) gestiona directamente el modelo nativo y la ejecución de herramientas. No se abre ninguna conexión de SDK secundaria de cara al LLM.
-* **`sdk-managed`**: Modo de ejecución autónomo (`standalone`). Se conecta directamente a la API de un LLM utilizando variables de entorno de proveedor (`GRU_DEEPAGENTS_PROVIDER`, `GRU_DEEPAGENTS_API_KEY_ENV`, etc.).
-
-### Flujo de Ejecución
-```text
-pnpm gru "prompt"
-        ↓
-HarnessDetector.detect()            ← Identifica el entorno activo
-        ↓
-AdapterRegistry.get(harnessId)      ← Resuelve el HarnessAdapter correspondiente
-        ↓
-adapter.supports(requiredCapability)?
-   ├── Sí → adapter.execute(task)      ← Ejecución nativa optimizada para el entorno
-   └── No  → fallbackSequentially()    ← Ejecución secuencial alternativa de Gru Core
-        ↓
-GruResult → Consola del sistema
+```bash
+pnpm run setup          # interactivo: pregunta antes de instalar cada provider
+pnpm run setup:check    # solo diagnóstico, no instala nada (exit 2 si falta algo)
+pnpm run setup:yes      # instala todo sin preguntar (CI / máquinas nuevas)
 ```
 
-### Matriz de Capacidades (`GruCapability`)
-Cada entorno declara qué capacidades soporta dinámicamente mediante el contrato `HarnessAdapter`:
-* **`native-subagents`**: Capacidad del entorno para lanzar subagentes de forma nativa sin consumir tokens del proceso principal (p. ej. Claude Code).
-* **`file-tools`**: Herramientas integradas de lectura y escritura de archivos.
-* **`web-search`**: Navegación o búsqueda en internet provista por el host.
-* **`code-execution`**: Entorno de ejecución de código o sandbox seguro.
-* **`memory`**: Persistencia de contexto/memoria a largo plazo.
-* **`approval-flow`**: Mecanismos interactivos para la solicitud y obtención de permisos.
+El script (`scripts/setup-providers.mjs`) cubre los 10 providers: **pnpm, pi, gentle-pi, gentle-ai, engram, ruflo, ecc, awesome-copilot, deepagents y context7**. Usa pnpm si está disponible y cae a npm si no. Lo que no puede automatizar te lo reporta con la instrucción manual exacta:
 
-### Sincronización Canónica (`pnpm gru sync`)
-Gru mantiene las definiciones de reglas, workflows y skills de forma centralizada en su estructura nativa. Al ejecutar el comando de sincronización:
-1. Se leen las carpetas `gru/skills/`, `gru/workflows/` y `gru/policies/`.
-2. Se distribuyen y compilan de forma idempotente en los subdirectorios específicos de cada entorno: `.claude/`, `.codex/`, `.gemini/` y `.pi/`.
-3. El sistema muestra un diff de los cambios propuestos antes de sobrescribir, protegiendo las ediciones manuales a menos que se use el flag `--force`.
+| Provider | Instalación automática | Acción manual (si aplica) |
+| :--- | :--- | :--- |
+| pnpm | `corepack enable` o `npm i -g pnpm` | — |
+| pi | `npm install -g pi` | — |
+| gentlePi | `pi install npm:gentle-pi` | requiere pi instalado |
+| gentlemanCli | instalador oficial (macOS/Linux) | en Windows: instalación manual o WSL |
+| engram | `pi install npm:gentle-engram` | o define `ENGRAM_BIN` apuntando al binario |
+| ruflo | `pnpm dlx ruflo@latest init wizard` | — |
+| ecc | `pnpm add -D ecc-universal` | — |
+| awesomeCopilot | `git clone github/awesome-copilot vendor/awesome-copilot` | o define `GRU_AWESOME_COPILOT_PATH` |
+| deepagents | — | define `GRU_DEEPAGENTS_ENTRY` apuntando a tu adaptador |
+| context7 | vía `npx` bajo demanda (`.mcp.json`) | — |
+
+### 4. Verificar la instalación
+
+```bash
+pnpm gru status        # tabla con el estado REAL de cada provider
+pnpm test              # suite completa (incluye stress tests de guardrails)
+```
+
+Si todo está bien, `gru status` muestra cada provider como `READY` con su versión. Los que falten aparecen con su instrucción de instalación. En CI puedes usar `pnpm gru status --strict` (exit 2 si falta algo).
+
+### Variables de entorno
+
+| Variable | Para qué |
+| :--- | :--- |
+| `ENGRAM_BIN` | ruta al binario de Engram si no está en el `PATH` |
+| `GRU_AWESOME_COPILOT_PATH` | ruta alternativa al catálogo awesome-copilot |
+| `GRU_DEEPAGENTS_ENTRY` | ruta al adaptador ejecutable de deepagents (`node adapter.mjs run "prompt"`) |
+
+---
+
+## 🕹️ Uso
+
+### CLI básico
+
+```bash
+pnpm gru "<prompt>"                  # orquesta una tarea: clasifica → enruta → ejecuta
+pnpm gru status                      # estado real de providers (alias: doctor, /status)
+pnpm gru --agentic "<prompt>"        # pipeline agentic: executor → reviewer → tester + gates
+pnpm gru --agentic "<prompt>" --phase apply --sdd mi-cambio
+```
+
+### Qué pasa cuando lanzas una tarea
+
+```text
+pnpm gru "usa swarm para implementar la feature"
+        ↓
+1. classifyTask()      → nivel 0-4 + señales de riesgo (bilingüe ES/EN)
+2. Gate de aprobación  → si hay riesgo: "¿Apruebas la ejecución? (si/NO)"
+3. routeTask()         → elige el provider por keywords (ruflo, gentlePi, ecc...)
+4. Devil's Advocate    → veto pre-vuelo (provider ausente, catálogo como executor)
+5. Health check real   → si el provider no está instalado: BLOCKED + cómo instalarlo
+6. Ejecución real      → resultado + log auditable en runs/*.json
+```
+
+Ejemplos de routing real:
+
+| Prompt | Nivel | ¿Pregunta? | Provider |
+| :--- | :--- | :--- | :--- |
+| `genera el sdd openspec de la nueva API` | 0 | no | gentlePi |
+| `recuerda que decidimos usar JWT sin sesiones` | 0 | no | engram |
+| `busca en el catalogo una skill de code review` | 0 | no | awesomeCopilot |
+| `audita la seguridad y revisa CVEs` | 2 | **sí** | ecc |
+| `usa swarm multiagente para la feature de pagos` | 1 | **sí** (gasto) | ruflo |
+| `borra la base de datos de producción` | 4 | **sí** | bloqueada sin aprobación |
+
+### Gate de aprobación humana
+
+* En terminal interactiva: Gru pregunta `¿Apruebas la ejecución de esta tarea? (si/NO)` y solo continúa con un sí explícito.
+* En CI / no-TTY: la tarea **no se ejecuta** y el proceso termina con código 2.
+* Escribir "ya está aprobado" o "es solo una prueba" dentro del prompt **no cuenta como aprobación** — el gate solo acepta el canal explícito.
+* Cada ejecución queda registrada en `runs/run_*.json` con clasificación, nivel, provider, comando, exit code y si hubo aprobación humana.
+
+### Tests y stress tests
+
+```bash
+pnpm test                                      # suite completa
+pnpm vitest run tests/guardrails.stress.test.ts   # solo los stress tests de guardrails
+```
+
+La suite de guardrails verifica que el orquestador no se sale de las líneas: prompts destructivos ES/EN, prompts adversariales (inyección, urgencia, "mi jefe ya aprobó"), riesgo enterrado en prompts largos, falsos positivos, y el contrato del `StrictHarnessController`.
+
+---
+
+## 📦 Usar el harness en TU proyecto
+
+Gru se integra en cualquier proyecto copiando los archivos de instrucciones del harness que uses:
+
+### 1. Copia los archivos del harness
+
+| Tu entorno | Archivo a copiar a tu proyecto |
+| :--- | :--- |
+| Claude Code | `.claude/CLAUDE.md` |
+| Codex / OpenAI | `.codex/AGENTS.md` |
+| Gemini CLI | `.gemini/GEMINI.md` |
+| Qwen | `.qwen/QWEN.md` |
+| Cualquiera (contrato de subagentes) | `minion-contract.md` → **raíz del proyecto** (obligatorio: todo sub-agente debe leerlo antes de trabajar) |
+| Protocolo SDD + memoria Engram | `SDD.md` |
+
+### 2. Copia la configuración MCP (opcional pero recomendado)
+
+`.mcp.json` registra los servidores MCP de **claude-flow/ruflo**, **context7** y **engram**. Ajusta `ENGRAM_BIN` a tu ruta local.
+
+### 3. Flujo de trabajo recomendado
+
+```text
+1. Arranque       → Gru consulta Engram; si no hay memoria, hace Project Intake.
+2. Paso 0         → Filesystem Scan SIEMPRE antes de clasificar (sin datos no se clasifica).
+3. Clasificación  → tabla de decisión: complejidad + riesgo → nivel 0-4.
+4. Workflow       → cada nivel define qué providers/roles intervienen:
+     Nivel 0  local
+     Nivel 1  local → validación ligera
+     Nivel 2  scan → gentlePi (mini-spec) → local → tests → devil → engram
+     Nivel 3  scan → gentlePi (SDD) → devil → local/ruflo → tests → ecc → engram
+     Nivel 4  todo lo anterior + Ruflo CONSULT + aprobación humana doble
+5. Cierre         → resumen caveman + guardar decisión en Engram.
+```
+
+### 4. Reglas que el harness aplica solo
+
+* **Skill check obligatorio**: antes de cada tarea se busca una skill local; si no existe, se consulta el catálogo awesome-copilot.
+* **Delegación obligatoria**: leer 4+ archivos, escribir en 2+ archivos o sesiones largas → sub-agente, no trabajo monolítico.
+* **Reviewer obligatorio** antes de commit/push; revisor con contexto fresco para diffs críticos.
+* **Personas**: `caveman` comprime la conversación (nunca los artefactos: JSON/YAML/código pasan intactos) y `devilsAdvocate` cuestiona y puede vetar delegaciones.
+
+---
+
+## 🎛️ Abstracción de Harnesses
+
+Gru se ejecuta en diferentes entornos sin hardcodear modelos ni proveedores:
+
+* **`host-managed`**: el harness activo (Claude Code, Codex, Gemini, Pi) gestiona el modelo y las herramientas de forma nativa.
+* **`sdk-managed`**: modo standalone; se conecta directamente a la API de un LLM mediante variables de entorno.
+
+Cada entorno declara sus capacidades (`native-subagents`, `file-tools`, `web-search`, `code-execution`, `memory`, `approval-flow`) mediante el contrato `HarnessAdapter`. Las tareas de nivel ≥ 3 requieren `native-subagents`; si el harness no lo soporta, se bloquean.
 
 ---
 
 ## 🔌 Catálogo de Providers
 
-Gru utiliza una arquitectura modular basada en **Providers** para interactuar con el entorno y ejecutar las tareas delegadas:
-
-| Provider ID | Ejecutable / Comando | Rol y Responsabilidad |
+| Provider ID | Ejecutable / Comando | Rol y responsabilidad |
 | :--- | :--- | :--- |
-| **`local`** | Comando directo | Ejecución de tareas locales en el workspace (sistema de archivos, git, npm, tests). |
-| **`ruflo`** | `ruflo` | Orquestador multi-agente para tareas complejas y swarms paralelos de minions. |
-| **`gentlePi`** | `gentle-ai/pi` | Soporte y herramientas para la especificación del sistema bajo metodología SDD/OpenSpec. |
-| **`gentlemanCli`** | `gentle-ai` | Diagnóstico de entorno, actualización de habilidades y sincronización de estado. |
-| **`ecc`** | `ecc` | Auditoría de políticas de seguridad, análisis de código y detección de vulnerabilidades CVE. |
-| **`deepagents`** | `deepagents` | Flujos de trabajo e hilos de tareas persistentes de largo plazo. |
-| **`engram`** | `engram` | Acceso a memoria persistente de decisiones y contexto histórico del proyecto. |
-| **`awesomeCopilot`** | Catálogo local | Búsqueda de habilidades (`SKILL.md`) y plantillas en el repositorio de la comunidad. |
+| **`local`** | Comando directo | Tareas locales del workspace (filesystem, git, npm, tests). |
+| **`ruflo`** | `ruflo` | Orquestador multi-agente para tareas complejas y swarms paralelos. |
+| **`gentlePi`** | `gentle-ai/pi` | Especificación SDD/OpenSpec y TDD disciplinado. |
+| **`gentlemanCli`** | `gentle-ai` | Diagnóstico de entorno, actualización de skills y sincronización. |
+| **`ecc`** | `ecc` | Auditoría de seguridad, políticas y detección de CVEs. |
+| **`deepagents`** | adaptador propio | Workflows persistentes de largo plazo con checkpoints. |
+| **`engram`** | `engram` | Memoria persistente de decisiones y contexto del proyecto. |
+| **`awesomeCopilot`** | Catálogo local | Búsqueda de skills (`SKILL.md`) comunitarias. **Solo catálogo: nunca ejecuta.** |
+
+---
+
+## 🆘 Solución de problemas
+
+| Síntoma | Causa | Solución |
+| :--- | :--- | :--- |
+| `[BLOCKED] Provider 'X' no disponible` | el binario no está instalado | `pnpm run setup` o sigue el hint del mensaje |
+| `[APROBACIÓN REQUERIDA] Nivel N` | la tarea toca riesgo real | responde `si` para aprobar, o cancela |
+| exit code 2 en CI | gate de aprobación o provider ausente | es el comportamiento correcto: el runtime estricto nunca simula |
+| `gru status` marca engram MISSING | binario fuera del PATH | define `ENGRAM_BIN` |
+| awesomeCopilot `CATÁLOGO AUSENTE` | falta el clon del catálogo | `git clone https://github.com/github/awesome-copilot vendor/awesome-copilot` |
+
+Más detalle: [STRICT_PROVIDER_RUNTIME.md](STRICT_PROVIDER_RUNTIME.md) · [Auditoría 2026-06-12](docs/harness-audit-2026-06-12.md)
