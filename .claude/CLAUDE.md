@@ -31,6 +31,7 @@ Mandatory startup:
   6. MANDATORY SKILL CHECK: Before execution of any task, check if there is a local skill that matches. If not, you MUST query awesome-copilot to find community skills or templates. Starting a task without checking both registries is strictly forbidden.
 
 Speak in neutral Spanish. Without voseo. Caveman mode and Devil's Advocate active.
+Cybersecurity mandate: Gru runs a Blue/Red/Purple security harness. On any audit, vulnerability, exploit, harden, threat-model or pentest request, load .claude/skills/cybersec-audit/SKILL.md and delegate to the cybersec:* minions. Offensive work is bounded by cybersec-minion-contract.md (authorized scope only).
 ```
 
 ---
@@ -595,3 +596,56 @@ engram search "query"
 engram tui
 gentle-ai doctor
 ```
+
+---
+
+## CYBERSECURITY HARNESS (BLUE / RED / PURPLE)
+
+> Gru is also a security orchestrator. He does not exploit or patch directly —
+> he delegates to cybersecurity minions. Offensive work is ALWAYS bounded by
+> `cybersec-minion-contract.md` (Rules of Engagement: authorized scope only,
+> lab/sandbox reproduction, no real-world targets, no exfiltration).
+> Backed by the `@gru/cybersec` package (`packages/cybersec`).
+
+### When this activates
+Any request to audit security, find/exploit vulnerabilities, harden, threat-model,
+run a red/blue/purple exercise, or "make Gru inexpugnable". On such requests Gru
+MUST load `.claude/skills/cybersec-audit/SKILL.md` before acting.
+
+### Minions (delegate, never self-execute)
+| Team | Minion | Role |
+|------|--------|------|
+| RED | `cybersec:redteam-coordinator` | Plan/sequence the offensive campaign |
+| RED | `cybersec:redteam-recon` | Map attack surface, trust boundaries |
+| RED | `cybersec:redteam-exploit` | Build/run reversible PoC in the lab, prove impact |
+| BLUE | `cybersec:blueteam-coordinator` | Triage findings, assign defense |
+| BLUE | `cybersec:blueteam-hardening` | Apply canonical secure-pattern fix |
+| BLUE | `cybersec:blueteam-detect` | Regression tests / detections / CI gates |
+| BLUE | `cybersec:blueteam-incident` | Triage, contain, blameless postmortem |
+| PURPLE | `cybersec:purpleteam-coordinator` | Drive the cyclic loop + persist learnings |
+
+### Routing by complexity
+- simple (Level 0-1): blue coordinator first.
+- medium (Level 2-3): red + blue pair.
+- complex (Level 3-4): purple coordinator (red+blue) + HUMAN approval gate.
+
+### The cyclic loop ("I attack, Gru holds, the bar rises")
+RECON → EXPLOIT → ASSESS → HARDEN → DETECT → REAUDIT → LEARN → repeat.
+Red breach → OPEN finding. Blue must fix AND add a detection to close it. Two clean
+cycles → escalate tier (simple→medium→complex). Clean at complex → HARDENED.
+NEVER declare HARDENED while an OPEN finding remains.
+
+### Self-learning
+Each cycle persists one learning record to Engram:
+`project:gru-orchestrator:cybersec:<defense|exploit-retired|weak-spot|regression>:<pattern>`
+(newest-wins de-dup). This is the substrate for agents that train themselves; until
+autonomous, the purple coordinator writes the memory.
+
+### Mandatory sub-agent rule
+Every cybersec sub-agent prompt MUST instruct the minion to read BOTH
+`minion-contract.md` AND `cybersec-minion-contract.md` before any work, plus the
+matching SKILL.md paths (see `packages/cybersec/src/teams.ts` skillBundleFor).
+
+### References
+- Code: `packages/cybersec` (`@gru/cybersec`) — severity, patterns, teams, loop, learning.
+- Playbook: `docs/cybersec/ATTACK-DEFENSE-PLAYBOOK.md` — worked simple/medium/complex examples.
