@@ -78,6 +78,7 @@ npx @claude-flow/cli@latest swarm init --topology hierarchical --max-agents 8 --
 | Refactor | architect, coder, reviewer | hierarchical |
 | Performance | perf-engineer, coder | hierarchical |
 | Security | security-architect, auditor | hierarchical |
+| CyberSec audit/exploit/harden | cybersec:redteam-*, cybersec:blueteam-*, cybersec:purpleteam-coordinator | hierarchical-mesh |
 
 ### When to Swarm
 - **YES**: 3+ files, new features, cross-module refactoring, API changes, security, performance
@@ -136,6 +137,9 @@ npx @claude-flow/cli@latest hooks worker dispatch --trigger audit
 **Core**: `coder`, `reviewer`, `tester`, `planner`, `researcher`
 **Architecture**: `system-architect`, `backend-dev`, `mobile-dev`
 **Security**: `security-architect`, `security-auditor`
+**CyberSec RED**: `cybersec:redteam-coordinator`, `cybersec:redteam-recon`, `cybersec:redteam-exploit`
+**CyberSec BLUE**: `cybersec:blueteam-coordinator`, `cybersec:blueteam-hardening`, `cybersec:blueteam-detect`, `cybersec:blueteam-incident`
+**CyberSec PURPLE**: `cybersec:purpleteam-coordinator`
 **Performance**: `performance-engineer`, `perf-analyzer`
 **Coordination**: `hierarchical-coordinator`, `mesh-coordinator`, `adaptive-coordinator`
 **GitHub**: `pr-manager`, `code-review-swarm`, `issue-tracker`, `release-manager`
@@ -187,21 +191,56 @@ LEVEL: [0-4] — [Trivial|Small|Medium|Large|Critical].
 PROVIDERS: [local, engram, gentlePi, ruflo, ecc, context7, awesomeCopilot, ...].
 PROCEDURE: [step1 → step2 → step3].
 FILES: [N new | M modified].
-TESTS: [N new — all green].
-DECISION: [architectural decision if any, or "none"].
-```
+TESTS: [N ne
+---
 
-### Save to Engram
+## CYBERSECURITY HARNESS (BLUE / RED / PURPLE)
 
-```text
-KEY:   project:gru-orchestrator:scope:[sdd-name]
-VALUE: [full caveman summary]
-LEVEL: [level]
-```
+> Gru is also a security orchestrator. He does not exploit or patch directly —
+> he delegates to cybersecurity minions. Offensive work is ALWAYS bounded by
+> `cybersec-minion-contract.md` (Rules of Engagement: authorized scope only,
+> lab/sandbox reproduction, no real-world targets, no exfiltration).
+> Backed by the `@gru/cybersec` package (`packages/cybersec`).
 
-### Rules
+### When this activates
+Any request to audit security, find/exploit vulnerabilities, harden, threat-model,
+run a red/blue/purple exercise, or "make Gru inexpugnable". On such requests Gru
+MUST load `.claude/skills/cybersec-audit/SKILL.md` before acting.
 
-- Do not summarize until all tests pass.
-- Only providers actually used — never fabricate.
-- PROCEDURE = real steps executed, not the theoretical workflow.
-- If scope was PARTIAL → indicate PARTIAL + reason.
+### Minions (delegate, never self-execute)
+| Team | Minion | Role |
+|------|--------|------|
+| RED | `cybersec:redteam-coordinator` | Plan/sequence the offensive campaign |
+| RED | `cybersec:redteam-recon` | Map attack surface, trust boundaries |
+| RED | `cybersec:redteam-exploit` | Build/run reversible PoC in the lab, prove impact |
+| BLUE | `cybersec:blueteam-coordinator` | Triage findings, assign defense |
+| BLUE | `cybersec:blueteam-hardening` | Apply canonical secure-pattern fix |
+| BLUE | `cybersec:blueteam-detect` | Regression tests / detections / CI gates |
+| BLUE | `cybersec:blueteam-incident` | Triage, contain, blameless postmortem |
+| PURPLE | `cybersec:purpleteam-coordinator` | Drive the cyclic loop + persist learnings |
+
+### Routing by complexity
+- simple (Level 0-1): blue coordinator first.
+- medium (Level 2-3): red + blue pair.
+- complex (Level 3-4): purple coordinator (red+blue) + HUMAN approval gate.
+
+### The cyclic loop ("I attack, Gru holds, the bar rises")
+RECON → EXPLOIT → ASSESS → HARDEN → DETECT → REAUDIT → LEARN → repeat.
+Red breach → OPEN finding. Blue must fix AND add a detection to close it. Two clean
+cycles → escalate tier (simple→medium→complex). Clean at complex → HARDENED.
+NEVER declare HARDENED while an OPEN finding remains.
+
+### Self-learning
+Each cycle persists one learning record to Engram:
+`project:gru-orchestrator:cybersec:<defense|exploit-retired|weak-spot|regression>:<pattern>`
+(newest-wins de-dup). This is the substrate for agents that train themselves; until
+autonomous, the purple coordinator writes the memory.
+
+### Mandatory sub-agent rule
+Every cybersec sub-agent prompt MUST instruct the minion to read BOTH
+`minion-contract.md` AND `cybersec-minion-contract.md` before any work, plus the
+matching SKILL.md paths (see `packages/cybersec/src/teams.ts` skillBundleFor).
+
+### References
+- Code: `packages/cybersec` (`@gru/cybersec`) — severity, patterns, teams, loop, learning.
+- Playbook: `docs/cybersec/ATTACK-DEFENSE-PLAYBOOK.md` — worked simple/medium/complex examples.

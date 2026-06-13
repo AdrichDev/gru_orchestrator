@@ -7,9 +7,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "gru": "tsx apps/cli/src/index.ts",
-    "setup": "node scripts/setup-providers.mjs",
+    "postinstall": "node scripts/setup-cybersec.mjs --postinstall",
+    "setup": "node scripts/setup-cybersec.mjs --postinstall && node scripts/setup-providers.mjs",
     "setup:check": "node scripts/setup-providers.mjs --check",
     "setup:yes": "node scripts/setup-providers.mjs --yes",
+    "setup:cybersec": "node scripts/setup-cybersec.mjs",
+    "setup:cybersec:check": "node scripts/setup-cybersec.mjs --check",
     "setup:legacy": "(pi --version || npm install -g pi) && curl -fsSL https://raw.githubusercontent.com/Gentleman-Programming/gentle-ai/main/scripts/install.sh | bash && pi install npm:gentle-pi && pi install npm:gentle-engram"
   },
   "keywords": [],
