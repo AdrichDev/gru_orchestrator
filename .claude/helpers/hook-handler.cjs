@@ -148,16 +148,44 @@ const handlers = {
   },
 
   'pre-bash': () => {
-    // Basic command safety check — prefer stdin command data from Claude Code.
-    // String() wrap is belt-and-suspenders for #2017: even if a future regression
-    // re-binds `prompt` or `hookInput.command` to a non-string, `.toLowerCase()`
-    // can no longer throw a TypeError that the global try/catch would swallow
-    // (silently exiting 0 and letting the dangerous command through).
-    const cmd = String(hookInput.command || toolInput.command || prompt || '').toLowerCase();
-    const dangerous = ['rm -rf /', 'format c:', 'del /s /q c:\\', ':(){:|:&};:'];
-    for (const d of dangerous) {
-      if (cmd.includes(d)) {
-        console.error(`[BLOCKED] Dangerous command detected: ${d}`);
+    // T-8 FIX: replace naive substring denylist with normalization-resistant
+    // regex patterns. Strategy:
+    //   1. Normalize internal whitespace (collapse runs to single space) so that
+    //      "rm  -rf  /" and "rm\t-rf\t/" are treated identically.
+    //   2. Match structural destructive patterns, not literal substrings.
+    //   3. Fail-closed only for clearly destructive shapes; ordinary commands
+    //      (including "rm -rf /tmp/x") are allowed.
+    //
+    // LIMITATION: This is a denylist of dangerous shapes, not an allowlist of
+    // safe commands. A sufficiently obfuscated command (e.g. shell variable
+    // expansion, base64 decode+eval) can still evade it. For stronger guarantees
+    // use a full shell-AST parser or a strict allowlist at the CI/CD layer.
+    // String() wrap ensures non-string values from hook input never throw.
+    const raw = String(hookInput.command || toolInput.command || prompt || '');
+    // Normalize: collapse all whitespace runs to a single space, trim.
+    const cmd = raw.replace(/\s+/g, ' ').trim();
+
+    // Patterns for clearly destructive commands.
+    const dangerousPatterns = [
+      // rm -rf / (and variants: -fr, --recursive --force, targeting drive roots)
+      /\brm\b[^|&;]*?(-[a-z]*r[a-z]*f|-[a-z]*f[a-z]*r|--recursive|--force)[^|&;]*?(\/\s*$|\/\s*[|&;]|\s\/\s|\s[A-Za-z]:\\)/i,
+      // rm with --no-preserve-root (explicitly bypasses the root guard)
+      /\brm\b.*--no-preserve-root/i,
+      // dd writing directly to a block device (of=/dev/sdX, of=/dev/diskX)
+      /\bdd\b.*\bof=\/dev\//i,
+      // mkfs — formats a filesystem
+      /\bmkfs\b/i,
+      // Windows: format drive (format c:, format /dev/...)
+      /\bformat\b\s+[a-zA-Z]:/i,
+      // Windows: del /s /q on drive root
+      /\bdel\b[^|&;]*\/s[^|&;]*\/q[^|&;]*[a-zA-Z]:\\/i,
+      // Fork bomb: :(){:|:&};:  (and common whitespace variants)
+      /:\s*\(\s*\)\s*\{\s*:\s*\|/,
+    ];
+
+    for (const pattern of dangerousPatterns) {
+      if (pattern.test(cmd)) {
+        console.error(`[BLOCKED] Dangerous command pattern detected`);
         process.exit(1);
       }
     }
