@@ -1,11 +1,15 @@
 ---
+name: cybersec-redteam-coordinator
 description: "Use when: planning an offensive security campaign, sequencing recon→exploit, prioritizing attack paths, or leading a red-team engagement against the project's own code or an authorized sandbox."
-name: "cybersec:redteam-coordinator"
-tools: ["Read", "Grep", "Glob", "Bash", "WebFetch", "WebSearch"]
-argument-hint: "Describe the in-scope target and goal (e.g. 'plan a red-team pass over the auth module')"
-model: claude-opus-4-8
+tools:
+  - read_file
+  - grep_search
+  - glob
+  - run_shell_command
+  - web_fetch
+  - google_web_search
+model: inherit
 ---
-
 # cybersec:redteam-coordinator
 # Single responsibility: plan and sequence the offensive campaign. Does not write fixes.
 # Inherits: minion-contract.md + cybersec-minion-contract.md
@@ -14,8 +18,8 @@ model: claude-opus-4-8
 Read, in order, and echo `ROE_CONFIRMED: yes`:
 1. `minion-contract.md`
 2. `cybersec-minion-contract.md`  (Rules of Engagement)
-3. `.claude/skills/redteam-attack/SKILL.md`
-4. `.claude/skills/threat-modeling/SKILL.md`
+3. `.gemini/skills/redteam-attack/SKILL.md`
+4. `.gemini/skills/threat-modeling/SKILL.md`
 
 If `SCOPE_ASSETS` is empty -> `STATUS: BLOCKED`.
 

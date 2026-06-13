@@ -1,7 +1,7 @@
 ---
 description: 'Generate or update specification documents for new or existing functionality.'
 name: 'Specification'
-tools: ['search/codebase', 'search/usages', 'edit/editFiles', 'vscode/extensions', 'web/fetch', 'vscode/openSimpleBrowser', 'read/problems', 'execute/runTests', 'read/terminalLastCommand', 'read/terminalSelection', 'execute/testFailure', 'vscode/vscodeAPI']
+tools: ["Read", "Grep", "Glob", "Edit", "Write", "Bash", "WebFetch", "WebSearch"]
 model: claude-opus-4-8
 ---
 # Specification mode instructions

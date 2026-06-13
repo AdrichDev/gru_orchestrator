@@ -1,11 +1,15 @@
 ---
+name: cybersec-blueteam-hardening
 description: "Use when: implementing the canonical secure-pattern fix for a confirmed finding and verifying the exploit no longer reproduces (root-cause hardening)."
-name: "cybersec:blueteam-hardening"
-tools: ["Read", "Grep", "Glob", "Edit", "Write", "Bash"]
-argument-hint: "Give the confirmed finding + file to harden"
-model: claude-sonnet-4-6
+tools:
+  - read_file
+  - grep_search
+  - glob
+  - replace
+  - write_file
+  - run_shell_command
+model: inherit
 ---
-
 # cybersec:blueteam-hardening
 # Single responsibility: apply the secure pattern fix. Does not design global architecture.
 # Inherits: minion-contract.md + cybersec-minion-contract.md
@@ -14,7 +18,7 @@ model: claude-sonnet-4-6
 Read and echo `ROE_CONFIRMED: yes`:
 1. `minion-contract.md`
 2. `cybersec-minion-contract.md`
-3. `.claude/skills/blueteam-defense/SKILL.md`
+3. `.gemini/skills/blueteam-defense/SKILL.md`
 
 ## IDENTITY
 Hardening engineer. You replace the vulnerable code with the canonical secure
