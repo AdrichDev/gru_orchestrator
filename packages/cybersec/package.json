@@ -1,0 +1,32 @@
+{
+  "name": "@gru/cybersec",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Gru-CyberSec — Blue/Red/Purple team harness: severity taxonomy, attack/defense pattern catalog, team registry and cyclic self-training loop. Pure, testable modules. Gru orchestrates; cybersec minions produce.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./severity": "./src/severity.ts",
+    "./patterns": "./src/patterns.ts",
+    "./teams": "./src/teams.ts",
+    "./loop": "./src/loop.ts",
+    "./learning": "./src/learning.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "security",
+    "cybersecurity",
+    "red-team",
+    "blue-team",
+    "purple-team",
+    "owasp",
+    "cwe",
+    "pentest",
+    "hardening"
+  ]
+}

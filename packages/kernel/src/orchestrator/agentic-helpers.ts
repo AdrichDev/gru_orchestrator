@@ -1,12 +1,27 @@
 import type { TaskAssignment } from "../../../shared/src/ports/orchestration.js";
 import type { ReviewResult, TestEvidence } from "../../../shared/src/ports/results.js";
 
+// T-7 FIX (fail-closed positive verdict): approval requires an explicit
+// positive marker from the sub-agent, not merely the absence of bad words.
+// Pattern: output must contain a line starting with "VERDICT: APPROVED" or
+// "VERDICT: PASS" (case-insensitive), AND must not contain hard blockers,
+// AND success must be true. Any of those absent → approved=false.
+const REVIEW_POSITIVE_VERDICT = /^VERDICT:\s*(APPROVED|PASS)\b/im;
+const REVIEW_HARD_BLOCKERS = /(BLOCKER|FAIL|REJECT|ERROR)/i;
+
+const TESTS_POSITIVE_VERDICT = /^TESTS:\s*PASS\b/im;
+const TESTS_HARD_BLOCKERS = /(FAIL|ERROR|REGRESSION)/i;
+
 export function buildReviewResultFromOutput(
   assignment: TaskAssignment,
   output: string,
   success: boolean
 ): ReviewResult {
-  const approved = success && !/(BLOCKER|FAIL|REJECT|ERROR)/i.test(output);
+  // Fail-closed: require explicit positive verdict AND absence of blockers.
+  const approved =
+    success &&
+    REVIEW_POSITIVE_VERDICT.test(output) &&
+    !REVIEW_HARD_BLOCKERS.test(output);
   const blockers = approved ? [] : ["Review did not approve — see output"];
   return {
     assignmentId: assignment.id,
@@ -24,7 +39,11 @@ export function buildTestEvidenceFromOutput(
   output: string,
   success: boolean
 ): TestEvidence {
-  const passed = success && !/(FAIL|ERROR|REGRESSION)/i.test(output);
+  // Fail-closed: require explicit positive verdict AND absence of blockers.
+  const passed =
+    success &&
+    TESTS_POSITIVE_VERDICT.test(output) &&
+    !TESTS_HARD_BLOCKERS.test(output);
   return {
     assignmentId: assignment.id,
     tester: assignment.tester,

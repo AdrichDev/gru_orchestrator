@@ -1,7 +1,7 @@
 ---
 description: 'Challenge assumptions and encourage critical thinking to ensure the best possible solution and outcomes.'
 name: 'Critical thinking mode instructions'
-tools: ['codebase', 'extensions', 'web/fetch', 'findTestFiles', 'githubRepo', 'problems', 'search', 'searchResults', 'usages']
+tools: ["Read", "Grep", "Glob", "WebFetch", "WebSearch"]
 model: claude-opus-4-8
 ---
 # Critical thinking mode instructions

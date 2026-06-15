@@ -90,8 +90,35 @@ export function evaluateSecurityAndSafety(review: ReviewResult): QualityGateResu
   return { gate: "security", status: "passed" };
 }
 
+// T-3 FIX (P-02 path confinement): validate sddId before resolving to a
+// filesystem path. Reject any value containing path separators, "..", or an
+// absolute path component. Then confirm the resolved path stays under the
+// expected base directory; if it escapes, fail the gate (fail-closed).
+const SDD_ID_SAFE = /^[a-zA-Z0-9_\-]+$/;
+
 export function evaluateSddTraceability(sddId: string): QualityGateResult {
-  const sddDir = path.resolve("openspec", "changes", sddId);
+  // 1. Reject unsafe sddId values before touching the filesystem.
+  if (!sddId || !SDD_ID_SAFE.test(sddId)) {
+    return {
+      gate: "sdd-traceability",
+      status: "failed",
+      reason: `Invalid sddId — must be alphanumeric/dash/underscore only: ${JSON.stringify(sddId)}`,
+    };
+  }
+
+  const base = path.resolve("openspec", "changes");
+  const sddDir = path.resolve(base, sddId);
+
+  // 2. Confirm resolved path stays inside the base directory.
+  const rel = path.relative(base, sddDir);
+  if (rel.startsWith("..") || path.isAbsolute(rel)) {
+    return {
+      gate: "sdd-traceability",
+      status: "failed",
+      reason: `Path traversal detected for sddId: ${JSON.stringify(sddId)}`,
+    };
+  }
+
   const required = ["proposal.md", "spec.md", "design.md", "tasks.md"];
   const missing = required.filter((f) => !fs.existsSync(path.join(sddDir, f)));
   if (missing.length > 0) {

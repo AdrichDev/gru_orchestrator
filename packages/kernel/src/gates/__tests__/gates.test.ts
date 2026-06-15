@@ -148,4 +148,29 @@ describe("evaluateSddTraceability", () => {
     const r = evaluateSddTraceability("gru-agentic-provider-orchestration");
     expect(r.status).toBe("passed");
   });
+
+  // T-3 regression: path traversal inputs must be rejected fail-closed.
+  it("fails (fail-closed) on path traversal sddId with ..", () => {
+    const r = evaluateSddTraceability("../../..");
+    expect(r.status).toBe("failed");
+    expect(r.reason).toContain("Invalid sddId");
+  });
+
+  it("fails (fail-closed) on sddId with forward slash", () => {
+    const r = evaluateSddTraceability("valid/../../etc/passwd");
+    expect(r.status).toBe("failed");
+    expect(r.reason).toContain("Invalid sddId");
+  });
+
+  it("fails (fail-closed) on sddId with backslash", () => {
+    const r = evaluateSddTraceability("valid\\..\\secret");
+    expect(r.status).toBe("failed");
+    expect(r.reason).toContain("Invalid sddId");
+  });
+
+  it("fails (fail-closed) on empty sddId", () => {
+    const r = evaluateSddTraceability("");
+    expect(r.status).toBe("failed");
+    expect(r.reason).toContain("Invalid sddId");
+  });
 });

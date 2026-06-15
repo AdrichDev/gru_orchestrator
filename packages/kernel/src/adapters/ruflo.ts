@@ -266,12 +266,15 @@ export class RufloProviderAdapter implements ProviderAdapter {
     const agentShortName = agentId.replace(/^agent-/, "");
     const previousOutput = (assignment.task.metadata?.previousOutput as string) ?? "";
 
+    // T-7 fix counterpart: reviewer/tester MUST emit an explicit structured
+    // verdict so the fail-closed gates in agentic-helpers.ts can approve. Without
+    // the marker the gate stays rejected by design (no silent fail-open).
     const prompt =
       role === "executor"
         ? `$agent-${agentShortName}: ${assignment.task.prompt}`
         : role === "reviewer"
-          ? `$agent-${agentShortName}: Review this output for quality and correctness:\n\n${previousOutput}`
-          : `$agent-${agentShortName}: Validate and test this implementation:\n\n${previousOutput}`;
+          ? `$agent-${agentShortName}: Review this output for quality and correctness:\n\n${previousOutput}\n\nWhen done, end your response with a line on its own: "VERDICT: APPROVED" if the work is correct and meets quality standards, otherwise "VERDICT: REJECTED" followed by the blockers.`
+          : `$agent-${agentShortName}: Validate and test this implementation:\n\n${previousOutput}\n\nWhen done, end your response with a line on its own: "TESTS: PASS" if all tests pass, otherwise "TESTS: FAIL" followed by the failures.`;
 
     const template =
       role === "reviewer" ? "code-review"
