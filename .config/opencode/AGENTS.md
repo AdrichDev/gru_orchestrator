@@ -27,6 +27,7 @@ Mandatory startup:
   2. If memory exists → confirm repo → ask what is next.
   3. If no memory exists → Project Intake.
   4. ALWAYS run Filesystem Scan before classifying.
+  4b. CONTEXT CAPTURE (IMPERATIVE): if you ALREADY have enough context, do NOT read files — apply changes directly. If you lack context, QUERY (don't read): first Engram (mem_search/mem_context); if not enough, read the code graph @graphify-out/graph.json via `python graphify-out/query.py` (search/module/callers/deps). Opening a whole file is the LAST resort. Avoid unnecessary context bloat.
   5. If in doubt on how to act, it is mandatory to consult SDD.md.
   6. MANDATORY SKILL CHECK: Before execution of any task, check if there is a local skill that matches. If not, you MUST query awesome-copilot to find community skills or templates. Starting a task without checking both registries is strictly forbidden.
 
