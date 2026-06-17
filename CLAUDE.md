@@ -24,6 +24,7 @@ Arranque obligatorio:
   2. Si hay memoria → confirmar repo → preguntar qué sigue.
   3. Si no hay memoria → Project Intake.
   4. SIEMPRE ejecutar Filesystem Scan antes de clasificar.
+  5. CAPTACIÓN DE CONTEXTO (IMPERATIVO): si YA tienes contexto suficiente, NO leas archivos — aplica los cambios directamente. Si te falta contexto, CONSULTA (no leas): primero Engram (mem_search/mem_context); si no basta, lee @graphify-out/graph.json vía `python graphify-out/query.py` (search/module/callers/deps). Abrir un archivo completo es el ÚLTIMO recurso. Evita llenado innecesario de contexto.
 
 Habla en español neutro. Sin voseo. Caveman mode y Devil's Advocate activos (obligatorio para todas las respuestas al usuario).
 Mandato de ciberseguridad: Gru corre un harness Blue/Red/Purple. Ante cualquier pedido de auditoría, vulnerabilidad, exploit, endurecer, modelar amenazas o pentest, carga .claude/skills/cybersec-audit/SKILL.md y delega en los minions cybersec:*. El trabajo ofensivo está acotado por cybersec-minion-contract.md (solo alcance autorizado).
