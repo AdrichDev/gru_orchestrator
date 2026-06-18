@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * gru-orchestrator — postinstall bootstrap.
+ * gru-harness — postinstall bootstrap.
  *
- * Runs automatically after `pnpm add -g gru-orchestrator` (or npm/yarn global).
+ * Runs automatically after `pnpm add -g gru-harness` (or npm/yarn global).
  * Also fires during `pnpm install` in the monorepo dev context.
  *
  * Contract:
@@ -38,6 +38,16 @@ const SCRIPT_ROOT = resolve(__dirname, ".."); // repo root when in scripts/, or 
 
 const warn = (msg) => process.stderr.write(`[gru postinstall] WARN: ${msg}\n`);
 const info = (msg) => process.stdout.write(`[gru postinstall] ${msg}\n`);
+
+const GRU_BANNER = `
+        .-"""""-.
+       /         \\
+      |  o     o  |
+      |    | |    |       G R U   H A R N E S S
+      |    | |    |    ─────────────────────────────
+       \\   '-'   /      orchestrator · globally installable
+        '-.___.-'       gru init → pick your runtime
+`;
 
 // ---------------------------------------------------------------------------
 // Context detection
@@ -204,6 +214,7 @@ async function runGlobalContext() {
   const gruDir = join(homeDir, ".gru");
   const awesomeCopilotDir = join(gruDir, "awesome-copilot");
 
+  process.stdout.write(GRU_BANNER + "\n");
   info(`Global install context — bootstrapping ~/.gru at: ${gruDir}`);
 
   // 1. Ensure ~/.gru/ exists

@@ -3,13 +3,13 @@
  */
 
 export const GRU_BANNER = `
-   ___  ____  _   _
-  / __||  _ \\| | | |     ____
- | |  _| |_) | |_| |    /    \\
- | |_| |  _ <|  _  |   | o  o |   GRU
-  \\____|_| \\_\\_| |_|   |  __  |   HARNESS
-                         \\_/  \\_/   orchestrator, globally
-                          \\ __ /    installable
+        .-"""""-.
+       /         \\
+      |  o     o  |
+      |    | |    |       G R U   H A R N E S S
+      |    | |    |    ─────────────────────────────
+       \\   '-'   /      orchestrator · globally installable
+        '-.___.-'       gru init → pick your runtime
 `;
 
 export function printBanner(): void {

@@ -1,15 +1,13 @@
 <div align="center">
 
 ```text
-                 .-"""""-.
-                /  _   _  \
-               |  (O) (O)  |
-               |     >     |        G R U   H A R N E S S
-               |   \___/   |   ─────────────────────────────
-                \  '---'  /     orchestrator · globally installable
-            .----'._____.'----.        gru init → pick your runtime
-           /   _             _  \
-          |   | |  G R U    | |  |
+        .-"""""-.
+       /         \
+      |  o     o  |
+      |    | |    |       G R U   H A R N E S S
+      |    | |    |    ─────────────────────────────
+       \   '-'   /      orchestrator · globally installable
+        '-.___.-'       gru init → pick your runtime
 ```
 
 </div>
@@ -164,20 +162,38 @@ La suite de guardrails verifica que el orquestador no se sale de las líneas: pr
 
 ## 📦 Usar el harness en TU proyecto
 
-Gru se integra en cualquier proyecto copiando los archivos de instrucciones del harness que uses:
+Instálalo una vez de forma global y úsalo en cualquier proyecto:
 
-### 1. Copia los archivos del harness
+### 1. Instala el CLI
 
-| Tu entorno | Archivo a copiar a tu proyecto |
+```bash
+pnpm add -g gru-harness     # expone el comando `gru` en todo el sistema
+```
+
+El `postinstall` prepara `~/.gru/` (config por defecto) y, si hay git/red, clona el catálogo awesome-copilot en `~/.gru/awesome-copilot` (no bloquea si falla).
+
+### 2. Scaffolding con `gru init` (multi-runtime)
+
+```bash
+cd tu-proyecto
+gru init                                  # menú interactivo: elige runtime(s) + scope
+gru init --runtime claude,cursor          # sin preguntar
+gru init --runtime all --scope project    # todos los runtimes en este repo
+```
+
+`gru init` muestra la cara de Gru y deja elegir uno o varios runtimes — **solo escribe los archivos del runtime elegido**:
+
+| Runtime | Qué scaffoldea |
 | :--- | :--- |
-| Claude Code | `.claude/CLAUDE.md` |
-| Codex / OpenAI | `.codex/AGENTS.md` |
-| Gemini CLI | `.gemini/GEMINI.md` |
-| Qwen | `.qwen/QWEN.md` |
-| Cualquiera (contrato de subagentes) | `minion-contract.md` → **raíz del proyecto** (obligatorio: todo sub-agente debe leerlo antes de trabajar) |
-| Protocolo SDD + memoria Engram | `SDD.md` |
+| Claude Code | `.claude/CLAUDE.md` + agentes y skills cybersec |
+| Codex / OpenAI | `AGENTS.md` + `.codex/` (agentes cybersec) |
+| Gemini CLI | `.gemini/GEMINI.md` (+ agentes cybersec) |
+| OpenCode | `.config/opencode/` |
+| Cursor | `.cursor/rules/gru.mdc` + `AGENTS.md` |
+| Antigravity | `AGENTS.md` |
+| **Compartido (siempre)** | `minion-contract.md`, `cybersec-minion-contract.md`, `.mcp.json`, `.gru/*.yaml` |
 
-### 2. Copia la configuración MCP (opcional pero recomendado)
+Scope: `--scope project` escribe en el repo actual (`.gru/`), `--scope global` en `~/.gru/`. Re-ejecutar es idempotente; `--force` sobrescribe (guarda `.bak`).
 
 `.mcp.json` registra los servidores MCP de **claude-flow/ruflo**, **context7** y **engram**. Ajusta `ENGRAM_BIN` a tu ruta local.
 
