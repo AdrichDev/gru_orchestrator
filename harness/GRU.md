@@ -1,7 +1,11 @@
-<!-- GENERATED FROM harness/GRU.md — DO NOT EDIT. Run: pnpm harness:gen -->
 # GRU — Minion Orchestrator HARNESS
 # Format: OpenAI / Codex / Claude Code / Gemini CLI / Cursor / OpenCode
 # Version: 2.0
+#
+# CANONICAL SOURCE — This is the ONLY hand-edited harness instruction document.
+# All other harness files (live and template) are generated outputs.
+# To regenerate all targets: pnpm harness:gen
+# DO NOT hand-edit any generated target. Edit here, then run the generator.
 
 ---
 
