@@ -10,8 +10,9 @@ import {
 } from "../../../packages/kernel/src/orchestrator/index.js";
 import type { ProviderId } from "../../../packages/shared/src/ports/provider.js";
 import type { SddPhase } from "../../../packages/shared/src/ports/agent.js";
-import { runInit, printInitSummary } from "./init.js";
-import type { InstallScope } from "./init.js";
+import { runInit, printInitSummary, isValidRuntime, ALL_RUNTIMES } from "./init.js";
+import type { InstallScope, RuntimeId } from "./init.js";
+import { printBanner } from "./banner.js";
 
 function formatStatus(s: { available: boolean; status?: string; kind?: string }): string {
   if (s.available) {
@@ -122,7 +123,10 @@ async function main(): Promise<void> {
     console.log('  pnpm gru --agentic "<prompt>" [--phase apply]');
     console.log("  pnpm gru status   (también /status)");
     console.log("  pnpm gru doctor   (alias de status)");
-    console.log("  pnpm gru init [--scope project|global] [--force]");
+    console.log("  pnpm gru init [--scope project|global] [--runtime <list>] [--force]");
+    console.log(`    --runtime: comma-separated list of runtimes (${ALL_RUNTIMES.join("|")})`);
+    console.log("    --runtime all: scaffold all runtimes");
+    console.log("    default runtime when non-interactive: claude");
     return;
   }
 
@@ -135,8 +139,8 @@ async function main(): Promise<void> {
 
   const filteredArgs = args.filter((a, i) => {
     if (a === "--strict" || a === "--agentic" || a === "--force") return false;
-    if (a === "--phase" || a === "--sdd" || a === "--scope") return false;
-    if (i > 0 && (args[i - 1] === "--phase" || args[i - 1] === "--sdd" || args[i - 1] === "--scope")) return false;
+    if (a === "--phase" || a === "--sdd" || a === "--scope" || a === "--runtime") return false;
+    if (i > 0 && (args[i - 1] === "--phase" || args[i - 1] === "--sdd" || args[i - 1] === "--scope" || args[i - 1] === "--runtime")) return false;
     return true;
   });
   const commandOrPrompt = filteredArgs.join(" ");
@@ -161,9 +165,41 @@ async function main(): Promise<void> {
       }
       scopeValue = raw as InstallScope;
     }
+
+    // Parse --runtime flag
+    const runtimeIdx = args.indexOf("--runtime");
+    let runtimeValues: RuntimeId[] | undefined;
+    if (runtimeIdx !== -1) {
+      const raw = args[runtimeIdx + 1];
+      if (!raw || raw.startsWith("--")) {
+        console.error("gru init: --runtime requires a value.");
+        process.exitCode = 2;
+        return;
+      }
+      if (raw.trim().toLowerCase() === "all") {
+        runtimeValues = [...ALL_RUNTIMES];
+      } else {
+        const parts = raw.split(",").map((s) => s.trim().toLowerCase());
+        const invalid = parts.filter((p) => !isValidRuntime(p));
+        if (invalid.length > 0) {
+          console.error(
+            `gru init: invalid --runtime value(s): ${invalid.join(", ")}. ` +
+            `Valid values: ${ALL_RUNTIMES.join(", ")}, all.`
+          );
+          process.exitCode = 2;
+          return;
+        }
+        runtimeValues = parts as RuntimeId[];
+      }
+    }
+
     const force = args.includes("--force");
+
+    // Print Gru ASCII banner at the top of init
+    printBanner();
+
     try {
-      const result = await runInit({ scope: scopeValue, force });
+      const result = await runInit({ scope: scopeValue, force, runtimes: runtimeValues });
       printInitSummary(result);
     } catch (err) {
       console.error("gru init failed:", err instanceof Error ? err.message : String(err));

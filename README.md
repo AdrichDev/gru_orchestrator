@@ -1,9 +1,15 @@
 <div align="center">
 
 ```text
- █▀▀ █▀▀█ █  █    █▀▀█ █▀▀█ █▀▀ █  █ █▀▀ █▀▀ ▀▀█▀▀ █▀▀█ █▀▀█ ▀▀█▀▀ █▀▀█ █▀▀█ 
- █ █ █▄▄▀ █  █    █  █ █▄▄▀ █   █▀▀█ █▀▀ ▀▀█   █   █▄▄▀ █▄▄█   █   █  █ █▄▄▀ 
- ▀▀▀ ▀ ▀▀  ▀▀     ▀▀▀▀ ▀ ▀▀  ▀▀ ▀  ▀ ▀▀▀ ▀▀▀   ▀   ▀ ▀▀ ▀  ▀   ▀   ▀▀▀▀ ▀ ▀▀
+                 .-"""""-.
+                /  _   _  \
+               |  (O) (O)  |
+               |     >     |        G R U   H A R N E S S
+               |   \___/   |   ─────────────────────────────
+                \  '---'  /     orchestrator · globally installable
+            .----'._____.'----.        gru init → pick your runtime
+           /   _             _  \
+          |   | |  G R U    | |  |
 ```
 
 </div>
@@ -20,7 +26,7 @@
 
 ---
 
-## 🧠 ¿Qué es Gru Orchestrator?
+## 🧠 ¿Qué es Gru Harness?
 
 Gru es un **harness orquestador de LLMs**: una capa de coordinación que centraliza la toma de decisiones, evalúa el riesgo de cada tarea y delega la ejecución en providers especializados (Ruflo, Gentle-Pi, ECC, Engram, Awesome Copilot…). Funciona dentro de Claude Code, Codex, Gemini CLI, Qwen o Pi — o en modo standalone vía CLI.
 
