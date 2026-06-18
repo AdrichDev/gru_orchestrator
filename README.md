@@ -1,13 +1,13 @@
 <div align="center">
 
 ```text
-        .-"""""-.
-       /         \
-      |  o     o  |
-      |    | |    |       G R U   H A R N E S S
-      |    | |    |    ─────────────────────────────
-       \   '-'   /      orchestrator · globally installable
-        '-.___.-'       gru init → pick your runtime
+    ____ ____  _   _
+   / ___|  _ \ | | | |
+  | |  _| |_) | | | |
+  | |_| |  _ <| |_| |
+   \____|_| \_\___/   H A R N E S S
+
+  orchestrator · installable globally · gru init → pick your runtime
 ```
 
 </div>
