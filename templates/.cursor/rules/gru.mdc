@@ -376,104 +376,36 @@ Lower level if:
 
 ---
 
-## WORKFLOWS BY LEVEL AND ROLES
+## WORKFLOWS BY LEVEL — COMPACT SUMMARY
 
-### Level 0 — Trivial
-```text
-local provider (for quick validation)
-```
+| Level | Name | Key Providers / Roles |
+|-------|------|-----------------------|
+| 0 | Trivial | local |
+| 1 | Small | local, devilsAdvocate/caveman |
+| 2 | Medium | local, gentlePi/gentlemanCli, devilsAdvocate, engram |
+| 3 | Large | local, gentlePi, devilsAdvocate, local/ruflo, ecc, engram |
+| 4 | Critical | local, gentlePi, devilsAdvocate, ruflo, human-approval, ecc, engram |
 
-### Level 1 — Small
-```text
-local provider (filesystem scan in step 0)
-→ local provider (for code editing)
-→ devilsAdvocate/caveman persona (light validation)
-```
-
-Optional: engram/awesomeCopilot provider.
-
-### Level 2 — Medium
-```text
-local provider (filesystem scan)
-→ gentlePi / gentlemanCli provider (for SDD and spec validation)
-→ local provider (for code editing)
-→ pnpm test (run tests)
-→ devilsAdvocate persona (risk assessment)
-→ engram provider (if there are persistent decisions)
-```
-
-### Level 3 — Large
-```text
-local provider (filesystem scan)
-→ gentlePi provider (SDD: specs, tasks, and design)
-→ devilsAdvocate persona (deep risk assessment)
-→ local or ruflo provider (for distributed code implementation)
-→ pnpm test (run unit/integration tests)
-→ ecc provider (security audit and CVE)
-→ engram provider (save architectural decisions)
-```
-
-### Level 4 — Critical
-```text
-local provider (filesystem scan)
-→ gentlePi provider (complete SDD)
-→ devilsAdvocate persona (mandatory audit)
-→ ruflo provider (multi-agent coordination in CONSULT/DELEGATE mode)
-→ explicit human approval
-→ local/ruflo provider (phased implementation and testing)
-→ ecc provider (mandatory security)
-→ final human approval
-→ engram provider (historical record of decisions)
-```
-
----
-
-## PROVIDER PROTOCOL
-
-> **LSP applied**: every Provider must implement Gru's task execution interface.
-> If a provider does not respond or is absent, Gru reports the error and blocks the task.
-
-Each provider must:
-- Report availability via `checkAvailability()`.
-- Expose their real capabilities and limitations.
-- Record the task result (`success`, `output`, `exitCode`, `error`).
-
-### Task Execution Format
-
-Gru invokes providers by passing a structured payload:
-- `prompt`: task instructions.
-- `taskId`: generated unique identifier.
-
-Providers return:
-- `success`: boolean indicating operation success.
-- `output` / `rawOutput`: resulting text or data.
-- `error`: detailed error message in case of failure.
+→ full provider sequences per level: `docs/harness-reference.md#workflow-sequences`
 
 ---
 
 ## PROVIDERS CATALOG
 
-| Provider (ProviderId) | Command / Executable | Responsibility and Role |
-|---|---|---|
-| **local** | Direct command | Execution of local tasks (filesystem, git, npm, tests). |
-| **ruflo** | `ruflo` | Multi-agent orchestrator for complex tasks and swarms. |
-| **gentlePi** | `gentle-ai/pi` | Support and instrumentation for SDD and OpenSpec workflows. |
-| **gentlemanCli** | `gentle-ai` | Environment diagnostics, skill updates, and sync. |
-| **ecc** | `ecc` | Policy audit, security review, and CVE. |
-| **deepagents** | `deepagents` | Long-term persistent task workflows and chains. |
-| **engram** | `engram` | Access to persistent memory and context storage. |
-| **awesomeCopilot** | Local catalog | Search for skills and templates in the vendor repository. |
+→ full catalog with commands and roles: `docs/harness-reference.md#providers-catalog`
+
+Short reference (ids used in routing):
+`local` | `ruflo` | `gentlePi` | `gentlemanCli` | `ecc` | `deepagents` | `engram` | `awesomeCopilot`
+
+→ provider protocol (LSP/task execution format): `docs/harness-reference.md#provider-protocol`
 
 ---
 
 ## CORE PERSONAS
 
-Gru's kernel evaluates certain behavioral traits directly during orchestration:
+→ full persona descriptions: `docs/harness-reference.md#core-personas`
 
-- **devilsAdvocate**: Evaluates prompts and router assignment. Detects risks, blocks unsafe
-  executions (like writes outside the workspace), and issues warnings.
-- **caveman**: Formats and compresses system outputs into a direct, no-nonsense command
-  language.
+Active personas: `devilsAdvocate` (risk/block) | `caveman` (output compression)
 
 ---
 
@@ -485,23 +417,7 @@ Gru's kernel evaluates certain behavioral traits directly during orchestration:
 **Activation rule**: Read `minion-contract.md` before any sub-agent launch. This is
 mandatory and non-negotiable. → see minion-contract.md
 
-**Minion catalog** (delegated sub-agent roles):
-
-| Minion | Unique Responsibility |
-|---|---|
-| filesystem | Read and map the repo |
-| architect | Architecture decisions |
-| spec | Write specifications |
-| builder | Implement code |
-| reviewer | Code review and quality |
-| tester | Write and run tests |
-| security | Security audit |
-| devil | Challenge decisions |
-| pm | Manage tasks and issues |
-| docs | Documentation |
-| context7 | Query technical documentation |
-| memory | Manage Engram |
-| mcp | Activate and manage MCPs |
+→ full minion catalog (13 roles with responsibilities): `docs/harness-reference.md#minion-catalog`
 
 Rule: Do not activate a Minion because it exists. Activate it only because the decision
 table requires it.
@@ -643,42 +559,8 @@ Explore → Mini-spec → Apply → Verify
 
 ## PROJECT INTAKE
 
-### New Project
-- Name, goal, type.
-- Stack.
-- Repo: GitHub, Bitbucket, or GitLab.
-- Management: Jira, Linear, Trello, or Notion.
-- Deployment.
-- Database.
-- AI.
-- Available MCPs.
-- Autonomy level.
-
-After:
-```text
-1. Save to Engram.
-2. Activate required MCPs.
-3. Run /sdd-init if the level requires it.
-```
-
-### Existing Project
-- Repo path or URL.
-- README, dependencies, issues, active branch, conventions, technical debt.
-
-After:
-```text
-1. Complete Filesystem Scan.
-2. Compare with Engram memory.
-3. Update context.
-4. Classify task.
-```
-
-### Context Confidence Level
-```text
-HIGH   → Repo analyzed or Ruflo read the project.
-MEDIUM → User responded, partial memory.
-LOW    → Only assumptions.
-```
+→ full intake questionnaire (new/existing project checklists, context confidence levels):
+`docs/harness-reference.md#project-intake`
 
 ---
 
@@ -717,13 +599,7 @@ LEVEL: [nivel]
 
 ## AVAILABLE COMMANDS
 
-```text
-/sdd-init
-/gentle-ai:status
-engram search "query"
-engram tui
-gentle-ai doctor
-```
+→ full command list: `docs/harness-reference.md#available-commands`
 
 ---
 
