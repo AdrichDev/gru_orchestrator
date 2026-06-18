@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 200" width="760" height="200" role="img" aria-label="GRU Harness — orchestrator">
+  <style>
+    .gru   { font: 800 96px ui-monospace, "SFMono-Regular", "Cascadia Code", Menlo, Consolas, monospace; fill: #facc15; letter-spacing: 4px; }
+    .harn  { font: 700 30px ui-monospace, "SFMono-Regular", "Cascadia Code", Menlo, Consolas, monospace; fill: #64748b; letter-spacing: 10px; }
+    .sub   { font: 400 17px ui-monospace, "SFMono-Regular", "Cascadia Code", Menlo, Consolas, monospace; fill: #64748b; }
+    .bar   { fill: #facc15; }
+    @media (prefers-color-scheme: dark) {
+      .harn { fill: #94a3b8; }
+      .sub  { fill: #94a3b8; }
+    }
+  </style>
+  <text x="20" y="100" class="gru">GRU</text>
+  <rect x="300" y="40" width="4" height="66" class="bar"/>
+  <text x="324" y="92" class="harn">HARNESS</text>
+  <text x="22" y="160" class="sub">orchestrator · installable globally · gru init → pick your runtime</text>
+</svg>

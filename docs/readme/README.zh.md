@@ -1,15 +1,6 @@
 <div align="center">
 
-```text
- ██████╗ ██████╗ ██╗   ██╗
-██╔════╝ ██╔══██╗██║   ██║
-██║  ███╗██████╔╝██║   ██║
-██║   ██║██╔══██╗██║   ██║
-╚██████╔╝██║  ██║╚██████╔╝   H A R N E S S
- ╚═════╝ ╚═╝  ╚═╝ ╚═════╝
-
-  orchestrator · installable globally · gru init → pick your runtime
-```
+<img src="../assets/gru-banner.svg" alt="GRU Harness — orchestrator" width="640">
 
 </div>
 
