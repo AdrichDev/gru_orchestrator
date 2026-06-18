@@ -12,7 +12,7 @@
  *   node scripts/setup-providers.mjs --yes      # installs everything without asking
  */
 
-import { spawnSync } from "node:child_process";
+import { spawnSync, execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import readline from "node:readline/promises";
@@ -22,10 +22,44 @@ const CHECK_ONLY = process.argv.includes("--check");
 const AUTO_YES = process.argv.includes("--yes");
 const IS_WIN = process.platform === "win32";
 
+/**
+ * Resolve the full path to a command on Windows using `where.exe`, or on
+ * POSIX using `which`.  Returns the resolved path or null if not found.
+ * This lets us exec the real binary directly instead of relying on shell
+ * resolution (which would require shell: true).
+ */
+function resolveCmd(cmd) {
+  try {
+    const lookup = IS_WIN ? "where.exe" : "which";
+    const result = spawnSync(lookup, [cmd], { encoding: "utf8", timeout: 10_000, shell: false });
+    if (result.status !== 0) return null;
+    // where.exe may return multiple lines — take the first .cmd/.exe match on Windows
+    const lines = result.stdout.trim().split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (!lines.length) return null;
+    if (IS_WIN) {
+      // Prefer .cmd shim (pnpm, npm) or .exe over plain script
+      const preferred = lines.find((l) => /\.(cmd|exe|bat)$/i.test(l));
+      return preferred ?? lines[0];
+    }
+    return lines[0];
+  } catch {
+    return null;
+  }
+}
+
+// Cache resolved command paths for this run
+const cmdCache = new Map();
+function getCmd(cmd) {
+  if (!cmdCache.has(cmd)) cmdCache.set(cmd, resolveCmd(cmd) ?? cmd);
+  return cmdCache.get(cmd);
+}
+
 function run(cmd, args, opts = {}) {
-  const result = spawnSync(cmd, args, {
+  // SEC-02: never use shell:true. Resolve .cmd/.bat shims explicitly on Windows.
+  const resolvedCmd = getCmd(cmd);
+  const result = spawnSync(resolvedCmd, args, {
     encoding: "utf8",
-    shell: IS_WIN, // resolve .cmd/.bat shims on Windows
+    shell: false,
     timeout: opts.timeout ?? 120_000,
     stdio: opts.inherit ? "inherit" : "pipe",
   });

@@ -527,6 +527,34 @@ export async function runInit(options: InitOptions = {}): Promise<InitResult> {
   const manifest = buildManifest(scope, cwd, home, runtimes);
 
   // 6. Scaffold each file
+  //
+  // SEC-07: when --force is active AND stdout is a TTY, list the files that
+  // would be overwritten and require explicit confirmation before clobbering.
+  // Non-interactive (no TTY) keeps the existing .bak side-write behaviour.
+  const wouldOverwrite = manifest.filter(({ dest }) => {
+    const srcPath = path.join(templatesDir, manifest.find((m) => m.dest === dest)?.src ?? "");
+    return fs.existsSync(dest);
+  });
+
+  if (force && process.stdout.isTTY && wouldOverwrite.length > 0) {
+    console.log("\n--force: the following existing files will be overwritten (a .bak backup is created first):");
+    for (const { dest } of wouldOverwrite) {
+      console.log(`  ~ ${dest}`);
+    }
+    const rl = readline.createInterface({ input, output });
+    let confirmed = false;
+    try {
+      const answer = await rl.question(`\nOverwrite ${wouldOverwrite.length} file(s)? Type "yes" to confirm: `);
+      confirmed = answer.trim().toLowerCase() === "yes";
+    } finally {
+      rl.close();
+    }
+    if (!confirmed) {
+      console.log("Aborted by user — no files were overwritten.");
+      return { scope, runtimes, files: [], awesomeCopilotStatus: "skipped" };
+    }
+  }
+
   const files: FileResult[] = [];
   for (const { src, dest } of manifest) {
     const existed = fs.existsSync(dest);

@@ -2,6 +2,16 @@ import { execa } from "execa";
 import { GruProvider, ProviderAvailability, ProviderTask, ProviderResult } from "../../../shared/src/ports/provider.js";
 import { probeCommand } from "../../../shared/src/runtime/probe.js";
 
+/**
+ * SEC-01 (CWE-88): strip a leading `-` or `--` from the prompt so it cannot
+ * be parsed as a CLI flag by the `pi` process.
+ * `pi -p` does not document a `--` end-of-options separator, so we sanitize
+ * the value instead.
+ */
+function sanitizePrompt(prompt: string): string {
+  return prompt.replace(/^-+/, "");
+}
+
 export class GentlePiProvider implements GruProvider {
   id = "gentlePi" as const;
   canHandle(task: ProviderTask): boolean {
@@ -20,14 +30,16 @@ export class GentlePiProvider implements GruProvider {
   }
   async run(task: ProviderTask): Promise<ProviderResult> {
     try {
-      const result = await execa("pi", ["-p", task.prompt], { reject: false });
+      // SEC-01: sanitize prompt — strip leading dashes to prevent flag injection.
+      const safePrompt = sanitizePrompt(task.prompt);
+      const result = await execa("pi", ["-p", safePrompt], { reject: false });
       return {
         providerId: this.id,
         success: result.exitCode === 0,
         output: result.stdout || result.stderr,
         error: result.exitCode === 0 ? undefined : result.stderr,
         exitCode: result.exitCode,
-        executedCommand: `pi -p ${JSON.stringify(task.prompt)}`
+        executedCommand: `pi -p ${JSON.stringify(safePrompt)}`
       };
     } catch (error) {
       return { providerId: this.id, success: false, output: "", error: error instanceof Error ? error.message : String(error) };
