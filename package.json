@@ -15,6 +15,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "harness:gen": "node scripts/generate-harness.mjs",
     "build": "tsup",
     "prepack": "tsup",
     "test": "vitest run",
