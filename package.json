@@ -1,7 +1,7 @@
 {
-  "name": "gru-orchestrator",
+  "name": "gru-harness",
   "version": "1.0.0",
-  "description": "Gru — AI orchestrator CLI. Globally installable. Runs from any cwd.",
+  "description": "Gru — AI orchestrator harness CLI. Globally installable. Runs from any cwd.",
   "main": "./dist/cli.cjs",
   "bin": {
     "gru": "./dist/cli.cjs"
