@@ -1,7 +1,7 @@
 {
-  "name": "gru-orchestrator",
+  "name": "gru-harness",
   "version": "1.0.0",
-  "description": "Gru — AI orchestrator CLI. Globally installable. Runs from any cwd.",
+  "description": "Gru — AI orchestrator harness CLI. Globally installable. Runs from any cwd.",
   "main": "./dist/cli.cjs",
   "bin": {
     "gru": "./dist/cli.cjs"
@@ -33,13 +33,6 @@
   "license": "ISC",
   "type": "module",
   "devDependencies": {
-    "@types/node": "^25.9.2",
-    "tsup": "^8.5.1",
-    "tsx": "^4.22.4",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
-  },
-  "dependencies": {
     "@gru/provider-awesome-copilot": "workspace:*",
     "@gru/provider-deepagents": "workspace:*",
     "@gru/provider-ecc": "workspace:*",
@@ -49,6 +42,13 @@
     "@gru/provider-local": "workspace:*",
     "@gru/provider-ruflo": "workspace:*",
     "@gru/shared": "workspace:*",
+    "@types/node": "^25.9.2",
+    "tsup": "^8.5.1",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  },
+  "dependencies": {
     "execa": "^9.6.1",
     "yaml": "^2.9.0"
   }

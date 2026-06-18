@@ -1,9 +1,13 @@
 <div align="center">
 
 ```text
- █▀▀ █▀▀█ █  █    █▀▀█ █▀▀█ █▀▀ █  █ █▀▀ █▀▀ ▀▀█▀▀ █▀▀█ █▀▀█ ▀▀█▀▀ █▀▀█ █▀▀█ 
- █ █ █▄▄▀ █  █    █  █ █▄▄▀ █   █▀▀█ █▀▀ ▀▀█   █   █▄▄▀ █▄▄█   █   █  █ █▄▄▀ 
- ▀▀▀ ▀ ▀▀  ▀▀     ▀▀▀▀ ▀ ▀▀  ▀▀ ▀  ▀ ▀▀▀ ▀▀▀   ▀   ▀ ▀▀ ▀  ▀   ▀   ▀▀▀▀ ▀ ▀▀
+    ____ ____  _   _
+   / ___|  _ \ | | | |
+  | |  _| |_) | | | |
+  | |_| |  _ <| |_| |
+   \____|_| \_\___/   H A R N E S S
+
+  orchestrator · installable globally · gru init → pick your runtime
 ```
 
 </div>
@@ -22,7 +26,7 @@
 
 ## 🚀 Installation & Configuration
 
-Suivez ces étapes pour cloner et installer l'environnement de développement de **Gru Orchestrator** :
+Suivez ces étapes pour cloner et installer l'environnement de développement de **Gru Harness** :
 
 ### 1. Cloner le dépôt
 ```bash
@@ -52,7 +56,7 @@ Si vous ne disposez pas des binaires externes requis pour l'orchestration, insta
 
 ---
 
-## 🧠 Qu'est-ce que Gru Orchestrator ?
+## 🧠 Qu'est-ce que Gru Harness ?
 
 Gru est un orchestrateur et un architecte conçu pour centraliser la prise de décision, évaluer les risques et coordonner les sous-agents (minions) pour le développement de logiciels.
 
