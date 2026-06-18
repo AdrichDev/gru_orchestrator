@@ -19,6 +19,8 @@ const ROUTING_BOOLEAN_KEYS = [
   "enableAwesomeCopilot",
 ] as const;
 
+const DEVIL_RIGIDITY_VALUES = ["advisory", "strict", "paranoid"] as const;
+
 /**
  * Lightweight runtime validation for the parsed config.yaml shape.
  * Returns true when the shape is acceptable; false when something is
@@ -28,6 +30,7 @@ const ROUTING_BOOLEAN_KEYS = [
  *   - Top level must be an object.
  *   - routing flags, if present, must be boolean or undefined.
  *   - routing.defaultMode, if present, must be a string.
+ *   - devil section, if present, must have valid rigidity and minConfidence values.
  */
 function isValidConfig(raw: unknown): raw is ProjectConfig {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return false;
@@ -49,6 +52,18 @@ function isValidConfig(raw: unknown): raw is ProjectConfig {
 
     // defaultMode must be a string if present
     if ("defaultMode" in r && typeof r.defaultMode !== "string") return false;
+  }
+
+  // devil section must be an object with valid fields if present
+  if ("devil" in obj) {
+    const devil = obj.devil;
+    if (typeof devil !== "object" || devil === null || Array.isArray(devil)) return false;
+    const d = devil as Record<string, unknown>;
+
+    if ("rigidity" in d && !DEVIL_RIGIDITY_VALUES.includes(d.rigidity as (typeof DEVIL_RIGIDITY_VALUES)[number])) {
+      return false;
+    }
+    if ("minConfidence" in d && typeof d.minConfidence !== "number") return false;
   }
 
   return true;
@@ -85,7 +100,12 @@ const DEFAULT_CONFIG: ProjectConfig = {
     enableDeepagents: true,
     enableEngram: true,
     enableAwesomeCopilot: true
-  }
+  },
+  // devil defaults: rigidity "strict" + minConfidence 30 reproduces the original behavior exactly.
+  devil: {
+    rigidity: "strict",
+    minConfidence: 30,
+  },
 };
 
 const DEFAULT_PROVIDERS: ProvidersFile = { providers: {} };
