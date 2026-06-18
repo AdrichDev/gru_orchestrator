@@ -6,8 +6,11 @@
  * naming the divergent file if any drift is detected.
  *
  * A drift means either:
- *   (a) Someone hand-edited a generated file (R1 violation), OR
- *   (b) harness/GRU.md was updated but `pnpm harness:gen` was not run (R3).
+ *   (a) Someone hand-edited a generated subdir/template file (R1 violation), OR
+ *   (b) AGENTS.md was updated but `pnpm harness:gen` was not run (R3).
+ *
+ * Root CLAUDE.md and GEMINI.md are byte-identical copies of AGENTS.md —
+ * drift for them means they diverge from AGENTS.md.
  *
  * Fix: run `pnpm harness:gen` from the repo root.
  */
@@ -40,19 +43,40 @@ function buildExpectedTargets(
   }));
 }
 
+// Root files that must be byte-identical to AGENTS.md (no GENERATED header).
+const ROOT_COPIES = ["CLAUDE.md", "GEMINI.md"];
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
 describe("harness drift check", () => {
-  test("harness/GRU.md canonical source must exist", () => {
+  test("AGENTS.md canonical source must exist", () => {
     expect(
       fs.existsSync(CANONICAL_PATH),
-      `MISSING: harness/GRU.md not found. Create it and run pnpm harness:gen.`
+      `MISSING: AGENTS.md not found. Create it and run pnpm harness:gen.`
     ).toBe(true);
   });
 
-  test("all generated targets match harness/GRU.md (no drift)", () => {
+  test("root CLAUDE.md and GEMINI.md are byte-identical to AGENTS.md", () => {
+    if (!fs.existsSync(CANONICAL_PATH)) return;
+    const canonical = readCanonical();
+    for (const name of ROOT_COPIES) {
+      const absPath = path.join(REPO_ROOT, name);
+      expect(
+        fs.existsSync(absPath),
+        `MISSING: ${name} — run pnpm harness:gen`
+      ).toBe(true);
+      const actual = fs.readFileSync(absPath, "utf8");
+      if (actual !== canonical) {
+        throw new Error(
+          `DRIFT: ${name} diverges from AGENTS.md — run \`pnpm harness:gen\` to fix.`
+        );
+      }
+    }
+  });
+
+  test("all generated targets match AGENTS.md (no drift)", () => {
     if (!fs.existsSync(CANONICAL_PATH)) {
       // Guard — previous test already failed; skip this one cleanly.
       return;
@@ -76,14 +100,14 @@ describe("harness drift check", () => {
       const actual = fs.readFileSync(absPath, "utf8");
       if (actual !== expected) {
         drifted.push(
-          `DRIFT: ${rel} diverges from harness/GRU.md — run \`pnpm harness:gen\` to fix.`
+          `DRIFT: ${rel} diverges from AGENTS.md — run \`pnpm harness:gen\` to fix.`
         );
       }
     }
 
     if (drifted.length > 0) {
       throw new Error(
-        `\n${drifted.length} generated file(s) have drifted from harness/GRU.md:\n\n` +
+        `\n${drifted.length} generated file(s) have drifted from AGENTS.md:\n\n` +
           drifted.map((d) => `  - ${d}`).join("\n") +
           "\n\nFix: run `pnpm harness:gen` from the repo root."
       );
@@ -118,7 +142,7 @@ describe("harness drift check", () => {
     }
   });
 
-  test("canonical harness/GRU.md contains GRU and HARNESS keywords", () => {
+  test("canonical AGENTS.md contains GRU and HARNESS keywords", () => {
     const content = fs.readFileSync(CANONICAL_PATH, "utf8");
     expect(content).toContain("GRU");
     expect(content).toContain("HARNESS");

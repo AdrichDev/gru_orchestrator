@@ -1,12 +1,11 @@
 /**
  * harness-invariants.test.ts
  *
- * B0 Gate: asserts that every imperative anchor phrase from R5 (the 19
- * required imperatives) is present in harness/GRU.md.
+ * Asserts that every imperative anchor phrase from R5 (the 19 required
+ * imperatives) is present in AGENTS.md (the canonical harness source).
  *
- * This test MUST be green before any Slice B (kernel/reference split) work
- * begins. After the split it MUST remain green — proving no imperative
- * was moved out of the kernel.
+ * After any Slice C rename/compression this MUST remain green — proving no
+ * imperative was lost during the canonical-rename or compression.
  *
  * On failure the test names the exact missing anchor phrase so the developer
  * knows what was accidentally removed.
@@ -20,13 +19,13 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, "..");
-const CANONICAL = path.join(REPO_ROOT, "harness", "GRU.md");
+const CANONICAL = path.join(REPO_ROOT, "AGENTS.md");
 
 // ---------------------------------------------------------------------------
 // The 19 R5 imperative anchors — one stable, concrete string per imperative.
-// These strings must remain in harness/GRU.md forever (kernel invariants).
+// These strings must remain in AGENTS.md forever (kernel invariants).
 // If a string is missing here, the task spec (R5) requires adding/restoring it
-// to harness/GRU.md — NOT relaxing the anchor.
+// to AGENTS.md — NOT relaxing the anchor.
 // ---------------------------------------------------------------------------
 
 const IMPERATIVES: Array<{ id: string; anchor: string }> = [
@@ -117,14 +116,14 @@ const IMPERATIVES: Array<{ id: string; anchor: string }> = [
 // ---------------------------------------------------------------------------
 
 describe("harness invariants — R5 imperative anchors", () => {
-  test("harness/GRU.md canonical source must exist", () => {
+  test("AGENTS.md canonical source must exist", () => {
     expect(
       fs.existsSync(CANONICAL),
-      `MISSING: harness/GRU.md not found — create it and run pnpm harness:gen`
+      `MISSING: AGENTS.md not found — create it and run pnpm harness:gen`
     ).toBe(true);
   });
 
-  test("all 19 R5 imperative anchor phrases are present in harness/GRU.md", () => {
+  test("all 19 R5 imperative anchor phrases are present in AGENTS.md", () => {
     if (!fs.existsSync(CANONICAL)) {
       // Guard — previous test already failed; skip this one cleanly.
       return;
@@ -135,13 +134,13 @@ describe("harness invariants — R5 imperative anchors", () => {
 
     for (const { id, anchor } of IMPERATIVES) {
       if (!content.includes(anchor)) {
-        missing.push(`MISSING: '${anchor}' (${id}) not found in harness/GRU.md`);
+        missing.push(`MISSING: '${anchor}' (${id}) not found in AGENTS.md`);
       }
     }
 
     if (missing.length > 0) {
       throw new Error(
-        `\n${missing.length} imperative anchor(s) are absent from harness/GRU.md:\n\n` +
+        `\n${missing.length} imperative anchor(s) are absent from AGENTS.md:\n\n` +
           missing.map((m) => `  - ${m}`).join("\n") +
           "\n\nDo NOT remove these anchors. If you moved explanatory content to" +
           " docs/harness-reference.md, the imperative HEADING must stay in the kernel."
@@ -154,12 +153,12 @@ describe("harness invariants — R5 imperative anchors", () => {
   for (const { id, anchor } of IMPERATIVES) {
     test(`[${id}] anchor present: "${anchor}"`, () => {
       if (!fs.existsSync(CANONICAL)) {
-        return; // Guard — harness/GRU.md missing, first test handles that.
+        return; // Guard — AGENTS.md missing, first test handles that.
       }
       const content = fs.readFileSync(CANONICAL, "utf8");
       expect(
         content,
-        `MISSING: '${anchor}' (${id}) not found in harness/GRU.md`
+        `MISSING: '${anchor}' (${id}) not found in AGENTS.md`
       ).toContain(anchor);
     });
   }
