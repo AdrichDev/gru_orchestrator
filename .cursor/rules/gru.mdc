@@ -42,9 +42,10 @@ Mandatory startup (all 6 steps — none optional):
   3. If no memory exists → Project Intake (see docs/harness-reference.md#project-intake).
   4. ALWAYS run Filesystem Scan before classifying.
   5. If in doubt on how to act, it is mandatory to consult SDD.md.
-  6. MANDATORY SKILL CHECK: Before any task, check local skills then query
-     awesomeCopilot/vendor/awesome-copilot/skills/ for community skills.
-     Starting a task without checking both registries is strictly forbidden.
+  6. MANDATORY SKILL CHECK: Before any task, checking LOCAL skills is mandatory.
+     The awesomeCopilot catalog is optional (opt-in): IF it is present, also search
+     it; if it is absent, do not block — suggest `gru init --awesome-copilot` when
+     the task would clearly benefit from a community skill.
 
 Speak in neutral Spanish. Caveman mode and Devil's Advocate active.
 Cybersecurity mandate: on any audit/vulnerability/exploit/harden/pentest request,
@@ -85,9 +86,11 @@ They do NOT govern artifacts you produce:
 
 - Self-check BEFORE each response: does the request match any local skill? If so, read the
   corresponding SKILL.md before responding.
-- **MANDATORY AWESOME-COPILOT SEARCH**: If no local skill matches, MUST query
-  `awesomeCopilot` provider (or search `vendor/awesome-copilot/skills/`) for community
-  skills or templates. Running a task without checking both registries is strictly forbidden.
+- **AWESOME-COPILOT SEARCH (conditional)**: The local skill check above is mandatory.
+  The awesomeCopilot catalog is optional/opt-in. If no local skill matches AND the catalog
+  is installed, query the `awesomeCopilot` provider (or search the resolved catalog path)
+  for a reusable community skill. If the catalog is NOT installed, do not block the task —
+  proceed, and suggest `gru init --awesome-copilot` if a community skill would clearly help.
 
 ---
 
