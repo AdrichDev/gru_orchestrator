@@ -174,9 +174,19 @@ describe("resolveGruRoot", () => {
     fs.mkdirSync(gruDir, { recursive: true }); // .gru exists but awesome-copilot subdir does NOT
     process.chdir(projectDir);
 
-    const { resolveAwesomeCopilotPath } = await import("../resolve.js");
-    // None exist → returns .gru/awesome-copilot as the "install hint" path
-    expect(resolveAwesomeCopilotPath()).toBe(path.join(gruDir, "awesome-copilot"));
+    // Isolate HOME to an empty dir so a real ~/.gru/awesome-copilot on the dev
+    // machine/CI runner is not picked up via the home fallback (priority 4).
+    const fakeHome = path.join(tmpDir, "home-empty");
+    fs.mkdirSync(fakeHome, { recursive: true });
+    const homedirSpy = vi.spyOn(os, "homedir").mockReturnValue(fakeHome);
+
+    try {
+      const { resolveAwesomeCopilotPath } = await import("../resolve.js");
+      // None exist → returns .gru/awesome-copilot as the "install hint" path
+      expect(resolveAwesomeCopilotPath()).toBe(path.join(gruDir, "awesome-copilot"));
+    } finally {
+      homedirSpy.mockRestore();
+    }
   });
 
   it("resolveAwesomeCopilotPath — vendor/awesome-copilot fallback (priority 3)", async () => {

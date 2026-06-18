@@ -39,7 +39,7 @@ export class AwesomeCopilotProvider implements GruProvider {
       kind: "catalog",
       executable: available ? skillsDir : undefined,
       reason: available ? undefined : `No se encontró el catálogo real en ${skillsDir}`,
-      installHint: "Clona https://github.com/github/awesome-copilot en .gru/awesome-copilot o define GRU_AWESOME_COPILOT_PATH."
+      installHint: "Run `gru init` and accept the awesome-copilot download, or: git clone --depth 1 https://github.com/github/awesome-copilot ~/.gru/awesome-copilot — alternatively set GRU_AWESOME_COPILOT_PATH."
     };
   }
 

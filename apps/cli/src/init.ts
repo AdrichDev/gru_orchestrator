@@ -32,6 +32,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import readline from "node:readline/promises";
+import { spawnSync } from "node:child_process";
 import { stdin as input, stdout as output } from "node:process";
 
 // ---------------------------------------------------------------------------
@@ -71,6 +72,18 @@ export interface InitOptions {
    * ["claude"]. If not provided and interactive, show multi-select menu.
    */
   runtimes?: RuntimeId[];
+  /**
+   * Download the awesome-copilot skills catalog (~100MB) into ~/.gru/awesome-copilot.
+   * true  → clone without prompting (--awesome-copilot / --skills flag).
+   * false → skip without prompting (non-interactive default).
+   * undefined → ask interactively when TTY is available (default: No).
+   */
+  awesomeCopilot?: boolean;
+  /**
+   * Injectable git runner for testing — replaces the real spawnSync git call.
+   * Receives (args: string[], targetDir: string) and returns { status: number }.
+   */
+  _gitRunner?: (args: string[], targetDir: string) => { status: number };
 }
 
 export interface FileResult {
@@ -82,6 +95,8 @@ export interface InitResult {
   scope: InstallScope;
   runtimes: RuntimeId[];
   files: FileResult[];
+  /** Status of the awesome-copilot catalog download step. */
+  awesomeCopilotStatus: "downloaded" | "already-present" | "skipped" | "failed";
 }
 
 // ---------------------------------------------------------------------------
@@ -383,6 +398,106 @@ export function buildManifest(
 }
 
 // ---------------------------------------------------------------------------
+// awesome-copilot opt-in resolver
+// ---------------------------------------------------------------------------
+
+/**
+ * Ask the user whether to download the awesome-copilot catalog.
+ * Only called when running interactively and awesomeCopilot is not explicitly set.
+ * Default answer is No (empty input → skip).
+ */
+export async function resolveAwesomeCopilotOptIn(
+  options: Pick<InitOptions, "awesomeCopilot">
+): Promise<boolean> {
+  // Explicit flag takes priority.
+  if (options.awesomeCopilot === true) return true;
+  if (options.awesomeCopilot === false) return false;
+
+  // Non-interactive: default skip.
+  if (!process.stdin.isTTY) return false;
+
+  // Interactive: prompt with default No.
+  const rl = readline.createInterface({ input, output });
+  try {
+    const answer = await rl.question(
+      "\nDownload the awesome-copilot skills catalog (~100MB)? (y/N): "
+    );
+    return answer.trim().toLowerCase() === "y";
+  } finally {
+    rl.close();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// awesome-copilot clone helper
+// ---------------------------------------------------------------------------
+
+const AWESOME_COPILOT_REPO = "https://github.com/github/awesome-copilot";
+
+/**
+ * Clone the awesome-copilot catalog into targetDir using `git clone --depth 1`.
+ *
+ * - Always targets ~/.gru/awesome-copilot regardless of init scope (shared catalog).
+ * - Offline-safe: git missing or clone failure → warn + hint, never throws.
+ * - Injectable _gitRunner for tests (avoids real network calls).
+ *
+ * Returns a status string describing the outcome.
+ */
+export function cloneAwesomeCopilotCatalog(
+  targetDir: string,
+  _gitRunner?: (args: string[], targetDir: string) => { status: number }
+): "downloaded" | "already-present" | "failed" {
+  // Skip if already present.
+  if (fs.existsSync(targetDir)) {
+    console.log(`  awesome-copilot: already present at ${targetDir} — skipping clone.`);
+    return "already-present";
+  }
+
+  // Default runner: real spawnSync git call (no shell:true, static args).
+  const runner =
+    _gitRunner ??
+    ((args: string[], dir: string): { status: number } => {
+      // Check git availability first.
+      const gitCheck = spawnSync("git", ["--version"], {
+        encoding: "utf8",
+        timeout: 10_000,
+        shell: false,
+      });
+      if (gitCheck.status !== 0) {
+        return { status: -1 };
+      }
+      const result = spawnSync("git", args, {
+        encoding: "utf8",
+        timeout: 120_000,
+        stdio: "pipe",
+        shell: false,
+      });
+      return { status: result.status ?? -1 };
+    });
+
+  console.log(`  Cloning awesome-copilot catalog into ${targetDir} ...`);
+  fs.mkdirSync(path.dirname(targetDir), { recursive: true });
+
+  const result = runner(
+    ["clone", "--depth", "1", AWESOME_COPILOT_REPO, targetDir],
+    targetDir
+  );
+
+  if (result.status === 0) {
+    console.log("  awesome-copilot: downloaded successfully.");
+    return "downloaded";
+  }
+
+  console.warn(
+    `  WARNING: awesome-copilot clone failed (git not found, network unavailable, or timeout).\n` +
+    `  To install manually later:\n` +
+    `    git clone --depth 1 ${AWESOME_COPILOT_REPO} ${JSON.stringify(targetDir)}\n` +
+    `  OR set the GRU_AWESOME_COPILOT_PATH env var to an existing local copy.`
+  );
+  return "failed";
+}
+
+// ---------------------------------------------------------------------------
 // Main entry point
 // ---------------------------------------------------------------------------
 
@@ -400,13 +515,18 @@ export async function runInit(options: InitOptions = {}): Promise<InitResult> {
   // 2. Resolve runtimes
   const runtimes = await resolveRuntimes({ runtimes: options.runtimes });
 
-  // 3. Locate templates
+  // 3. Resolve awesome-copilot opt-in (ask interactively if TTY and not set)
+  const downloadAwesomeCopilot = await resolveAwesomeCopilotOptIn({
+    awesomeCopilot: options.awesomeCopilot,
+  });
+
+  // 4. Locate templates
   const templatesDir = resolveTemplatesDir();
 
-  // 4. Build file manifest
+  // 5. Build file manifest
   const manifest = buildManifest(scope, cwd, home, runtimes);
 
-  // 5. Scaffold each file
+  // 6. Scaffold each file
   const files: FileResult[] = [];
   for (const { src, dest } of manifest) {
     const existed = fs.existsSync(dest);
@@ -432,7 +552,15 @@ export async function runInit(options: InitOptions = {}): Promise<InitResult> {
     files.push({ dest, status: existed && force ? "overwritten" : "created" });
   }
 
-  return { scope, runtimes, files };
+  // 7. awesome-copilot catalog — always into ~/.gru/awesome-copilot (shared, machine-wide).
+  //    Scope (project vs global) does not affect the target: it is always home-based.
+  let awesomeCopilotStatus: InitResult["awesomeCopilotStatus"] = "skipped";
+  if (downloadAwesomeCopilot) {
+    const acTargetDir = path.join(home, ".gru", "awesome-copilot");
+    awesomeCopilotStatus = cloneAwesomeCopilotCatalog(acTargetDir, options._gitRunner);
+  }
+
+  return { scope, runtimes, files, awesomeCopilotStatus };
 }
 
 // ---------------------------------------------------------------------------
@@ -440,7 +568,7 @@ export async function runInit(options: InitOptions = {}): Promise<InitResult> {
 // ---------------------------------------------------------------------------
 
 export function printInitSummary(result: InitResult): void {
-  const { scope, runtimes, files } = result;
+  const { scope, runtimes, files, awesomeCopilotStatus } = result;
 
   const created     = files.filter((f) => f.status === "created");
   const skipped     = files.filter((f) => f.status === "skipped");
@@ -464,6 +592,14 @@ export function printInitSummary(result: InitResult): void {
   }
 
   console.log(`\nSummary: ${created.length} created, ${overwritten.length} overwritten, ${skipped.length} skipped.`);
+
+  const acLabel: Record<InitResult["awesomeCopilotStatus"], string> = {
+    downloaded:      "downloaded",
+    "already-present": "already present (skipped re-clone)",
+    skipped:         "skipped (pass --awesome-copilot to download)",
+    failed:          "download failed — see warning above",
+  };
+  console.log(`awesome-copilot: ${acLabel[awesomeCopilotStatus]}`);
 
   console.log("\nNext steps:");
   if (scope === "project") {

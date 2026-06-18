@@ -123,10 +123,12 @@ async function main(): Promise<void> {
     console.log('  pnpm gru --agentic "<prompt>" [--phase apply]');
     console.log("  pnpm gru status   (también /status)");
     console.log("  pnpm gru doctor   (alias de status)");
-    console.log("  pnpm gru init [--scope project|global] [--runtime <list>] [--force]");
+    console.log("  pnpm gru init [--scope project|global] [--runtime <list>] [--force] [--awesome-copilot]");
     console.log(`    --runtime: comma-separated list of runtimes (${ALL_RUNTIMES.join("|")})`);
     console.log("    --runtime all: scaffold all runtimes");
     console.log("    default runtime when non-interactive: claude");
+    console.log("    --awesome-copilot: download the awesome-copilot skills catalog (~100MB) into ~/.gru/awesome-copilot");
+    console.log("    --skills: alias for --awesome-copilot");
     return;
   }
 
@@ -139,6 +141,7 @@ async function main(): Promise<void> {
 
   const filteredArgs = args.filter((a, i) => {
     if (a === "--strict" || a === "--agentic" || a === "--force") return false;
+    if (a === "--awesome-copilot" || a === "--skills") return false;
     if (a === "--phase" || a === "--sdd" || a === "--scope" || a === "--runtime") return false;
     if (i > 0 && (args[i - 1] === "--phase" || args[i - 1] === "--sdd" || args[i - 1] === "--scope" || args[i - 1] === "--runtime")) return false;
     return true;
@@ -195,11 +198,21 @@ async function main(): Promise<void> {
 
     const force = args.includes("--force");
 
+    // --awesome-copilot / --skills: opt into downloading the catalog
+    const awesomeCopilotFlag = args.includes("--awesome-copilot") || args.includes("--skills")
+      ? true
+      : undefined; // undefined → resolve interactively if TTY, else skip
+
     // Print Gru ASCII banner at the top of init
     printBanner();
 
     try {
-      const result = await runInit({ scope: scopeValue, force, runtimes: runtimeValues });
+      const result = await runInit({
+        scope: scopeValue,
+        force,
+        runtimes: runtimeValues,
+        awesomeCopilot: awesomeCopilotFlag,
+      });
       printInitSummary(result);
     } catch (err) {
       console.error("gru init failed:", err instanceof Error ? err.message : String(err));

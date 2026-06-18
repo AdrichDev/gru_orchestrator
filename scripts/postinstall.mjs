@@ -11,8 +11,9 @@
  *   - In global-install context:
  *       1. Creates ~/.gru/ (idempotent).
  *       2. Seeds default config/providers/skills yaml from templates (no clobber).
- *       3. Optionally clones awesome-copilot into ~/.gru/awesome-copilot
- *          (skipped silently if git absent or network unavailable).
+ *       3. Prints an info hint: awesome-copilot is opt-in via `gru init`.
+ *          The catalog is NOT cloned here — run `gru init` (or `gru skills sync`)
+ *          to download it on demand.
  *
  * Context detection:
  *   A dev/monorepo context is detected by the presence of the `packages/`
@@ -22,7 +23,7 @@
  *   global path (useful for testing).
  */
 
-import { existsSync, mkdirSync, copyFileSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, copyFileSync, readdirSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -117,65 +118,6 @@ function seedDir(srcDir, destDir) {
 }
 
 // ---------------------------------------------------------------------------
-// awesome-copilot clone (best-effort, offline-safe)
-// ---------------------------------------------------------------------------
-
-function cloneAwesomeCopilot(targetDir) {
-  // Skip if already present
-  if (existsSync(targetDir)) {
-    info("awesome-copilot already present — skipping clone.");
-    return;
-  }
-
-  // Check git availability — Node resolves git.exe without a shell on all platforms.
-  const gitCheck = spawnSync("git", ["--version"], {
-    encoding: "utf8",
-    timeout: 10_000,
-  });
-  if (gitCheck.status !== 0) {
-    warn(
-      "awesome-copilot clone skipped (git not found). " +
-      "To install manually: git clone https://github.com/github/awesome-copilot " +
-      JSON.stringify(targetDir) +
-      "  OR set GRU_AWESOME_COPILOT_PATH env var."
-    );
-    return;
-  }
-
-  info("Cloning awesome-copilot catalog into ~/.gru/awesome-copilot ...");
-  mkdirSync(dirname(targetDir), { recursive: true });
-
-  const cloneResult = spawnSync(
-    "git",
-    ["clone", "--depth", "1", "https://github.com/github/awesome-copilot", targetDir],
-    {
-      encoding: "utf8",
-      timeout: 60_000,   // 60s max — network may be slow
-      stdio: "pipe",
-    }
-  );
-
-  if (cloneResult.status === 0) {
-    info("awesome-copilot cloned successfully.");
-  } else {
-    warn(
-      "awesome-copilot clone failed (network unavailable or timeout). " +
-      "Run manually later: git clone --depth 1 https://github.com/github/awesome-copilot " +
-      JSON.stringify(targetDir) +
-      "  OR set GRU_AWESOME_COPILOT_PATH env var."
-    );
-    // Clean up partial clone directory if it was created
-    try {
-      if (existsSync(targetDir)) {
-        rmSync(targetDir, { recursive: true, force: true });
-      }
-    } catch {
-      // Non-critical cleanup failure — ignore
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Dev context handler
 // ---------------------------------------------------------------------------
 
@@ -212,7 +154,6 @@ function runDevContext() {
 async function runGlobalContext() {
   const homeDir = homedir();
   const gruDir = join(homeDir, ".gru");
-  const awesomeCopilotDir = join(gruDir, "awesome-copilot");
 
   process.stdout.write(GRU_BANNER + "\n");
   info(`Global install context — bootstrapping ~/.gru at: ${gruDir}`);
@@ -242,17 +183,8 @@ async function runGlobalContext() {
     }
   }
 
-  // 3. Clone awesome-copilot (best-effort, never blocking)
-  // Env var GRU_SKIP_AWESOME_COPILOT_CLONE=1 skips the clone (useful in tests/CI)
-  if (process.env.GRU_SKIP_AWESOME_COPILOT_CLONE === "1") {
-    info("awesome-copilot clone skipped (GRU_SKIP_AWESOME_COPILOT_CLONE=1).");
-  } else {
-    try {
-      cloneAwesomeCopilot(awesomeCopilotDir);
-    } catch (err) {
-      warn(`awesome-copilot clone encountered unexpected error: ${err.message}`);
-    }
-  }
+  // 3. awesome-copilot catalog is opt-in — not cloned here.
+  info("awesome-copilot catalog is optional — run `gru init` (or `gru skills sync`) to download it.");
 
   info("Global bootstrap complete.");
 }

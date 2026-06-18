@@ -18,6 +18,8 @@ import {
   resolveTemplatesDir,
   isValidRuntime,
   ALL_RUNTIMES,
+  cloneAwesomeCopilotCatalog,
+  resolveAwesomeCopilotOptIn,
   type InstallScope,
   type RuntimeId,
 } from "../apps/cli/src/init.js";
@@ -592,6 +594,198 @@ describe("CLI: --runtime flag", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// awesome-copilot opt-in — unit tests (no real network calls)
+// ---------------------------------------------------------------------------
+
+describe("resolveAwesomeCopilotOptIn", () => {
+  test("returns true when awesomeCopilot is explicitly true", async () => {
+    const result = await resolveAwesomeCopilotOptIn({ awesomeCopilot: true });
+    expect(result).toBe(true);
+  });
+
+  test("returns false when awesomeCopilot is explicitly false", async () => {
+    const result = await resolveAwesomeCopilotOptIn({ awesomeCopilot: false });
+    expect(result).toBe(false);
+  });
+
+  test("returns false when awesomeCopilot is undefined and stdin is not TTY (non-interactive default)", async () => {
+    // In test runner, process.stdin.isTTY is false — non-interactive → default skip.
+    const result = await resolveAwesomeCopilotOptIn({ awesomeCopilot: undefined });
+    expect(result).toBe(false);
+  });
+});
+
+describe("cloneAwesomeCopilotCatalog — injectable runner (no network)", () => {
+  let tmpHome: string;
+
+  beforeEach(() => {
+    tmpHome = makeTmpDir("gru-ac-test-");
+  });
+
+  afterEach(() => {
+    cleanDir(tmpHome);
+  });
+
+  test("returns 'downloaded' when git runner succeeds", () => {
+    const targetDir = path.join(tmpHome, ".gru", "awesome-copilot");
+    const mockRunner = (_args: string[], _dir: string): { status: number } => {
+      // Simulate successful clone: create the directory so existence checks pass.
+      fs.mkdirSync(_dir, { recursive: true });
+      return { status: 0 };
+    };
+    const status = cloneAwesomeCopilotCatalog(targetDir, mockRunner);
+    expect(status).toBe("downloaded");
+  });
+
+  test("returns 'failed' when git runner exits non-zero", () => {
+    const targetDir = path.join(tmpHome, ".gru", "awesome-copilot");
+    const mockRunner = (_args: string[], _dir: string): { status: number } => {
+      return { status: 1 }; // simulate network failure
+    };
+    const status = cloneAwesomeCopilotCatalog(targetDir, mockRunner);
+    expect(status).toBe("failed");
+  });
+
+  test("returns 'failed' when git runner returns -1 (git not found)", () => {
+    const targetDir = path.join(tmpHome, ".gru", "awesome-copilot");
+    const mockRunner = (_args: string[], _dir: string): { status: number } => {
+      return { status: -1 }; // simulate git not found
+    };
+    const status = cloneAwesomeCopilotCatalog(targetDir, mockRunner);
+    expect(status).toBe("failed");
+  });
+
+  test("returns 'already-present' and skips runner when targetDir already exists", () => {
+    const targetDir = path.join(tmpHome, ".gru", "awesome-copilot");
+    fs.mkdirSync(targetDir, { recursive: true });
+
+    let runnerCalled = false;
+    const mockRunner = (_args: string[], _dir: string): { status: number } => {
+      runnerCalled = true;
+      return { status: 0 };
+    };
+    const status = cloneAwesomeCopilotCatalog(targetDir, mockRunner);
+    expect(status).toBe("already-present");
+    expect(runnerCalled).toBe(false);
+  });
+
+  test("mock runner receives correct git clone args", () => {
+    const targetDir = path.join(tmpHome, ".gru", "awesome-copilot");
+    let capturedArgs: string[] = [];
+    const mockRunner = (args: string[], _dir: string): { status: number } => {
+      capturedArgs = args;
+      fs.mkdirSync(_dir, { recursive: true });
+      return { status: 0 };
+    };
+    cloneAwesomeCopilotCatalog(targetDir, mockRunner);
+    expect(capturedArgs).toEqual([
+      "clone",
+      "--depth",
+      "1",
+      "https://github.com/github/awesome-copilot",
+      targetDir,
+    ]);
+  });
+});
+
+describe("runInit — awesome-copilot flag", () => {
+  let tmpCwd: string;
+  let tmpHome: string;
+
+  beforeEach(() => {
+    tmpCwd = makeTmpDir("gru-ac-init-cwd-");
+    tmpHome = makeTmpDir("gru-ac-init-home-");
+  });
+
+  afterEach(() => {
+    cleanDir(tmpCwd);
+    cleanDir(tmpHome);
+  });
+
+  test("awesomeCopilot: false → status 'skipped', runner not called", async () => {
+    let runnerCalled = false;
+    const mockRunner = (_args: string[], _dir: string): { status: number } => {
+      runnerCalled = true;
+      return { status: 0 };
+    };
+    const result = await runInit({
+      scope: "project",
+      cwd: tmpCwd,
+      home: tmpHome,
+      awesomeCopilot: false,
+      _gitRunner: mockRunner,
+    });
+    expect(result.awesomeCopilotStatus).toBe("skipped");
+    expect(runnerCalled).toBe(false);
+  });
+
+  test("awesomeCopilot: true → clone called, status 'downloaded'", async () => {
+    let runnerCalled = false;
+    const mockRunner = (args: string[], dir: string): { status: number } => {
+      runnerCalled = true;
+      fs.mkdirSync(dir, { recursive: true });
+      return { status: 0 };
+    };
+    const result = await runInit({
+      scope: "project",
+      cwd: tmpCwd,
+      home: tmpHome,
+      awesomeCopilot: true,
+      _gitRunner: mockRunner,
+    });
+    expect(result.awesomeCopilotStatus).toBe("downloaded");
+    expect(runnerCalled).toBe(true);
+  });
+
+  test("awesomeCopilot: true, --scope project → clones into home/.gru/awesome-copilot (not cwd)", async () => {
+    let clonedTarget: string | undefined;
+    const mockRunner = (args: string[], dir: string): { status: number } => {
+      clonedTarget = dir;
+      fs.mkdirSync(dir, { recursive: true });
+      return { status: 0 };
+    };
+    await runInit({
+      scope: "project",
+      cwd: tmpCwd,
+      home: tmpHome,
+      awesomeCopilot: true,
+      _gitRunner: mockRunner,
+    });
+    // Target must be under home, not cwd
+    expect(clonedTarget).toBeDefined();
+    expect(clonedTarget!.startsWith(tmpHome)).toBe(true);
+    expect(clonedTarget!.startsWith(tmpCwd)).toBe(false);
+  });
+
+  test("awesomeCopilot: true but git fails → status 'failed', init still returns normally", async () => {
+    const mockRunner = (_args: string[], _dir: string): { status: number } => {
+      return { status: 128 }; // git error
+    };
+    const result = await runInit({
+      scope: "project",
+      cwd: tmpCwd,
+      home: tmpHome,
+      awesomeCopilot: true,
+      _gitRunner: mockRunner,
+    });
+    expect(result.awesomeCopilotStatus).toBe("failed");
+    // Files should still be scaffolded despite clone failure
+    expect(result.files.some((f) => f.status === "created")).toBe(true);
+  });
+
+  test("awesomeCopilot: undefined (non-interactive) → status 'skipped'", async () => {
+    // process.stdin.isTTY is false in tests → default skip
+    const result = await runInit({
+      scope: "project",
+      cwd: tmpCwd,
+      home: tmpHome,
+      awesomeCopilot: undefined,
+    });
+    expect(result.awesomeCopilotStatus).toBe("skipped");
+  });
+});
+
 describe("CLI: --scope validation", () => {
   test("invalid --scope value exits 2 and prints an error", () => {
     // dist/cli.cjs must exist (built by `pnpm build`).
@@ -626,6 +820,103 @@ describe("CLI: --scope validation", () => {
       expect(result.status).toBe(0);
     } finally {
       fs.rmSync(tmpCwd, { recursive: true, force: true });
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// CLI integration — --awesome-copilot flag
+// ---------------------------------------------------------------------------
+
+describe("CLI: --awesome-copilot flag", () => {
+  test("init without --awesome-copilot exits 0 and does NOT clone (skipped)", { timeout: 15_000 }, () => {
+    if (!fs.existsSync(CLI_BUNDLE)) {
+      throw new Error(`dist/cli.cjs not found at ${CLI_BUNDLE}.`);
+    }
+    const tmpCwd = fs.mkdtempSync(path.join(os.tmpdir(), "gru-no-ac-"));
+    const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "gru-no-ac-home-"));
+    try {
+      const result = spawnSync(
+        process.execPath,
+        [CLI_BUNDLE, "init", "--runtime", "claude", "--scope", "project"],
+        {
+          encoding: "utf8",
+          cwd: tmpCwd,
+          timeout: 15_000,
+          env: { ...process.env, HOME: tmpHome, USERPROFILE: tmpHome },
+        }
+      );
+      expect(result.status).toBe(0);
+      // awesome-copilot dir should NOT have been created
+      const acDir = path.join(tmpHome, ".gru", "awesome-copilot");
+      expect(fs.existsSync(acDir)).toBe(false);
+      // Summary should mention "skipped"
+      expect(result.stdout).toMatch(/awesome-copilot.*skipped/i);
+    } finally {
+      fs.rmSync(tmpCwd, { recursive: true, force: true });
+      fs.rmSync(tmpHome, { recursive: true, force: true });
+    }
+  });
+
+  test("init with --awesome-copilot and git unavailable exits 0 (offline-safe)", { timeout: 15_000 }, () => {
+    if (!fs.existsSync(CLI_BUNDLE)) {
+      throw new Error(`dist/cli.cjs not found at ${CLI_BUNDLE}.`);
+    }
+    const tmpCwd = fs.mkdtempSync(path.join(os.tmpdir(), "gru-ac-offline-"));
+    const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "gru-ac-offline-home-"));
+    try {
+      const result = spawnSync(
+        process.execPath,
+        [CLI_BUNDLE, "init", "--runtime", "claude", "--scope", "project", "--awesome-copilot"],
+        {
+          encoding: "utf8",
+          cwd: tmpCwd,
+          timeout: 15_000,
+          // Use an empty PATH so git is not found → tests offline-safe behaviour.
+          env: {
+            ...process.env,
+            HOME: tmpHome,
+            USERPROFILE: tmpHome,
+            PATH: os.tmpdir(), // no git here
+          },
+        }
+      );
+      // Must exit 0 even when git is unavailable
+      expect(result.status).toBe(0);
+      // Harness files still scaffolded
+      expect(fs.existsSync(path.join(tmpCwd, ".gru", "config.yaml"))).toBe(true);
+    } finally {
+      fs.rmSync(tmpCwd, { recursive: true, force: true });
+      fs.rmSync(tmpHome, { recursive: true, force: true });
+    }
+  });
+
+  test("--skills is accepted as alias for --awesome-copilot (offline-safe, exits 0)", { timeout: 15_000 }, () => {
+    if (!fs.existsSync(CLI_BUNDLE)) {
+      throw new Error(`dist/cli.cjs not found at ${CLI_BUNDLE}.`);
+    }
+    const tmpCwd = fs.mkdtempSync(path.join(os.tmpdir(), "gru-skills-alias-"));
+    const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "gru-skills-alias-home-"));
+    try {
+      const result = spawnSync(
+        process.execPath,
+        [CLI_BUNDLE, "init", "--runtime", "claude", "--scope", "project", "--skills"],
+        {
+          encoding: "utf8",
+          cwd: tmpCwd,
+          timeout: 15_000,
+          env: {
+            ...process.env,
+            HOME: tmpHome,
+            USERPROFILE: tmpHome,
+            PATH: os.tmpdir(), // no git → offline-safe test
+          },
+        }
+      );
+      expect(result.status).toBe(0);
+    } finally {
+      fs.rmSync(tmpCwd, { recursive: true, force: true });
+      fs.rmSync(tmpHome, { recursive: true, force: true });
     }
   });
 });
