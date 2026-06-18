@@ -40,7 +40,7 @@ Gru es un **harness orquestador de LLMs**: una capa de coordinación que central
 ## 🚀 Quickstart
 
 ```bash
-pnpm add -g gru-harness     # instala el comando `gru` (Node 20+)
+pnpm add -g github:AdrichDev/gru_orchestrator   # instala `gru` (repo privado, Node 20+)
 cd tu-proyecto
 gru init                    # menú interactivo: elige runtime(s) + scope
 gru status                  # estado real de cada provider

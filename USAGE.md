@@ -1,7 +1,8 @@
 # Gru Harness — Guía de uso (referencia)
 
-Referencia completa del CLI `gru` publicado como `gru-harness`. Para la presentación
-del proyecto, ver [README.md](README.md). Para el runtime estricto de providers, ver
+Referencia completa del CLI `gru` (paquete `@adrichdev/gru-harness`, repo privado —
+se instala desde Git, no desde el registry público). Para la presentación del proyecto,
+ver [README.md](README.md). Para el runtime estricto de providers, ver
 [STRICT_PROVIDER_RUNTIME.md](STRICT_PROVIDER_RUNTIME.md).
 
 ---
@@ -9,10 +10,14 @@ del proyecto, ver [README.md](README.md). Para el runtime estricto de providers,
 ## Instalación
 
 ```bash
-pnpm add -g gru-harness     # expone el comando `gru` en todo el sistema
+# Repo privado → install directo desde Git (no clone manual; expone el comando `gru`).
+pnpm add -g github:AdrichDev/gru_orchestrator
+# o por SSH:
+pnpm add -g git+ssh://git@github.com/AdrichDev/gru_orchestrator.git
 ```
 
-Funciona con npm o yarn global también. Requiere **Node.js 20+**.
+Requiere acceso al repo privado, **git** y **Node.js 20+**. El install compila el
+bundle en tu máquina (script `prepare` → tsup). No se publica en el registry npm público.
 
 ### Qué hace el `postinstall`
 
@@ -271,6 +276,7 @@ Más detalle: [STRICT_PROVIDER_RUNTIME.md](STRICT_PROVIDER_RUNTIME.md) ·
 
 ## Desarrollo / contribuir
 
-El paquete se publica como `gru-harness` desde un monorepo pnpm. Para trabajar sobre el
-código, clona el repo, `pnpm install`, y usa `pnpm gru ...` (vía `tsx`). Detalles en el
-repositorio: <https://github.com/AdrichDev/gru_orchestrator>.
+El paquete `@adrichdev/gru-harness` vive en un monorepo pnpm y es **privado** (no se
+publica en el registry npm público; se distribuye por Git install). Para trabajar sobre
+el código, clona el repo, `pnpm install`, y usa `pnpm gru ...` (vía `tsx`). Detalles en
+el repositorio privado: <https://github.com/AdrichDev/gru_orchestrator>.

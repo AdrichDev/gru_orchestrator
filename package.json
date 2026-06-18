@@ -1,7 +1,8 @@
 {
-  "name": "gru-harness",
+  "name": "@adrichdev/gru-harness",
   "version": "1.0.0",
-  "description": "Gru — AI orchestrator harness CLI. Globally installable. Runs from any cwd.",
+  "description": "Gru — AI orchestrator harness CLI. Private; install from the repo via `pnpm add -g github:AdrichDev/gru_orchestrator`. Runs from any cwd.",
+  "private": true,
   "main": "./dist/cli.cjs",
   "bin": {
     "gru": "./dist/cli.cjs"
@@ -17,6 +18,7 @@
   "scripts": {
     "harness:gen": "node scripts/generate-harness.mjs",
     "build": "tsup",
+    "prepare": "tsup",
     "prepack": "tsup",
     "test": "vitest run",
     "test:watch": "vitest",
