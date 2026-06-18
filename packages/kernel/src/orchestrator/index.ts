@@ -56,6 +56,74 @@ export const PROVIDERS: Record<ProviderId, GruProvider> = {
   local: new LocalProvider()
 };
 
+// ─── Provider registry (extensible seam) ─────────────────────────────────────
+//
+// A single registry holds the canonical provider map.  It is pre-populated from
+// PROVIDERS so behaviour is identical to the previous hardcoded lookup, while
+// third-party plugins can add new providers via `registerProvider()` WITHOUT
+// editing this file.
+//
+// Extension point example:
+//
+//   import { registerProvider } from "@gru/kernel/orchestrator";
+//   registerProvider(new MyCustomProvider());
+//
+// After registration, `orchestrateTask("...", "myCustomId")` resolves through
+// the same path as the built-in providers.
+//
+// The registry key is typed as `string` at this layer so external providers are
+// not forced to extend the closed `ProviderId` union.  Typed callers (router,
+// classifier, isProviderEnabled) continue to use the closed union unchanged —
+// no cascading type changes needed.
+
+class GruProviderRegistry {
+  private readonly map: Map<string, GruProvider> = new Map();
+
+  register(provider: GruProvider): void {
+    this.map.set(provider.id as string, provider);
+  }
+
+  get(id: string): GruProvider | undefined {
+    return this.map.get(id);
+  }
+
+  has(id: string): boolean {
+    return this.map.has(id);
+  }
+
+  list(): GruProvider[] {
+    return Array.from(this.map.values());
+  }
+}
+
+/** Module-level singleton registry pre-populated with all built-in providers. */
+const _providerRegistry = new GruProviderRegistry();
+for (const provider of Object.values(PROVIDERS)) {
+  _providerRegistry.register(provider);
+}
+
+/**
+ * Register an additional GruProvider so it becomes resolvable by
+ * `orchestrateTask`.  Call this at application startup (before the first
+ * orchestration call) to add third-party or plugin providers.
+ *
+ * This is the documented extension point for provider plugins.  The built-in
+ * providers are registered automatically; you only need to call this for
+ * providers that are NOT part of the kernel package.
+ *
+ * @example
+ *   import { registerProvider } from "@gru/kernel/orchestrator";
+ *   registerProvider(new MyCustomProvider());
+ */
+export function registerProvider(provider: GruProvider): void {
+  _providerRegistry.register(provider);
+}
+
+/** Read-only view of the provider registry (for diagnostics / tests). */
+export function getRegisteredProviders(): GruProvider[] {
+  return _providerRegistry.list();
+}
+
 export class ProviderUnavailableError extends Error {
   constructor(
     public readonly providerId: ProviderId,
@@ -109,7 +177,7 @@ export interface OrchestrateOptions {
 }
 
 export async function getProviderStatuses() {
-  return Promise.all(Object.values(PROVIDERS).map((provider) => provider.checkAvailability()));
+  return Promise.all(_providerRegistry.list().map((provider) => provider.checkAvailability()));
 }
 
 export async function orchestrateTask(
@@ -143,7 +211,15 @@ export async function orchestrateTask(
     );
   }
 
-  const provider = PROVIDERS[providerId];
+  const provider = _providerRegistry.get(providerId as string);
+  if (!provider) {
+    throw new ProviderUnavailableError(
+      providerId,
+      `Provider '${providerId}' no está registrado en el registry.`,
+      "Asegúrate de llamar registerProvider() antes de orchestrateTask().",
+      decision.fallbacks
+    );
+  }
   const availability = await provider.checkAvailability();
   if (!availability.available) {
     throw new ProviderUnavailableError(

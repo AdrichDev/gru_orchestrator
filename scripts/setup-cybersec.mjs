@@ -26,6 +26,28 @@ const CHECK_ONLY = ARGV.includes("--check");
 const POSTINSTALL = ARGV.includes("--postinstall");
 const IS_WIN = process.platform === "win32";
 
+/**
+ * SEC-02: resolve the real .cmd/.exe shim path for a command on Windows
+ * using `where.exe`, or `which` on POSIX.  Returns the resolved path or the
+ * bare command name as fallback (so we never need shell: true).
+ */
+function resolveCmd(cmd) {
+  try {
+    const lookup = IS_WIN ? "where.exe" : "which";
+    const r = spawnSync(lookup, [cmd], { encoding: "utf8", timeout: 10_000, shell: false });
+    if (r.status !== 0) return cmd;
+    const lines = r.stdout.trim().split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (!lines.length) return cmd;
+    if (IS_WIN) {
+      const preferred = lines.find((l) => /\.(cmd|exe|bat)$/i.test(l));
+      return preferred ?? lines[0];
+    }
+    return lines[0];
+  } catch {
+    return cmd;
+  }
+}
+
 const log = (s = "") => console.log(s);
 const rel = (p) => path.join(ROOT, p);
 
@@ -176,8 +198,9 @@ if (POSTINSTALL) {
     log("\n✘ Harness incomplete — fix the missing assets above before testing.");
     process.exitCode = 2;
   } else {
+    // SEC-02: resolve .cmd shim explicitly — never use shell: true.
     const pm = (() => {
-      const r = spawnSync("pnpm", ["--version"], { shell: IS_WIN, encoding: "utf8" });
+      const r = spawnSync(resolveCmd("pnpm"), ["--version"], { shell: false, encoding: "utf8" });
       return r.status === 0 ? "pnpm" : "npm";
     })();
     log(`\nRunning typecheck + tests for @gru/cybersec via ${pm}...`);
@@ -185,7 +208,7 @@ if (POSTINSTALL) {
       pm === "pnpm"
         ? ["--filter", "@gru/cybersec", "run", "test"]
         : ["test", "--workspace", "@gru/cybersec"];
-    const r = spawnSync(pm, args, { cwd: ROOT, shell: IS_WIN, stdio: "inherit" });
+    const r = spawnSync(resolveCmd(pm), args, { cwd: ROOT, shell: false, stdio: "inherit" });
     if (r.status === 0) {
       log("\n✔ Gru-CyberSec harness installed, wired and verified.");
       process.exitCode = 0;
