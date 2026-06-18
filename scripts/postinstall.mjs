@@ -41,11 +41,12 @@ const warn = (msg) => process.stderr.write(`[gru postinstall] WARN: ${msg}\n`);
 const info = (msg) => process.stdout.write(`[gru postinstall] ${msg}\n`);
 
 const GRU_BANNER = `
-    ____ ____  _   _
-   / ___|  _ \\| | | |
-  | |  _| |_) | | | |
-  | |_| |  _ <| |_| |
-   \\____|_| \\_\\\\___/   H A R N E S S
+ ██████╗ ██████╗ ██╗   ██╗
+██╔════╝ ██╔══██╗██║   ██║
+██║  ███╗██████╔╝██║   ██║
+██║   ██║██╔══██╗██║   ██║
+╚██████╔╝██║  ██║╚██████╔╝   H A R N E S S
+ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝
 
   orchestrator · installable globally · gru init → pick your runtime
 `;
