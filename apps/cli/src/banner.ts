@@ -7,7 +7,7 @@ export const GRU_BANNER = `
    / ___|  _ \\| | | |
   | |  _| |_) | | | |
   | |_| |  _ <| |_| |
-   \\____|_| \\_\\_____/   H A R N E S S
+   \\____|_| \\_\\\\___/   H A R N E S S
 
   orchestrator · installable globally · gru init → pick your runtime
 `;

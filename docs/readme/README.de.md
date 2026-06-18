@@ -2,10 +2,10 @@
 
 ```text
     ____ ____  _   _
-   / ___|  _ \ | | | |
+   / ___|  _ \| | | |
   | |  _| |_) | | | |
   | |_| |  _ <| |_| |
-   \____|_| \_\___/   H A R N E S S
+   \____|_| \_\\___/   H A R N E S S
 
   orchestrator · installable globally · gru init → pick your runtime
 ```
