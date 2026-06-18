@@ -151,16 +151,89 @@ describe("resolveGruRoot", () => {
     expect(resolveAwesomeCopilotPath()).toBe(acPath);
   });
 
-  it("resolveAwesomeCopilotPath — falls back to <gru-root>/awesome-copilot", async () => {
+  it("resolveAwesomeCopilotPath — falls back to <gru-root>/awesome-copilot when it exists", async () => {
+    delete process.env.GRU_CONFIG_DIR;
+    delete process.env.GRU_AWESOME_COPILOT_PATH;
+
+    const projectDir = path.join(tmpDir, "project");
+    const gruDir = path.join(projectDir, ".gru");
+    const gruAcPath = path.join(gruDir, "awesome-copilot");
+    fs.mkdirSync(gruAcPath, { recursive: true }); // create the ac dir so it exists
+    process.chdir(projectDir);
+
+    const { resolveAwesomeCopilotPath } = await import("../resolve.js");
+    expect(resolveAwesomeCopilotPath()).toBe(gruAcPath);
+  });
+
+  it("resolveAwesomeCopilotPath — returns .gru path (install hint) when no candidate exists", async () => {
+    delete process.env.GRU_CONFIG_DIR;
+    delete process.env.GRU_AWESOME_COPILOT_PATH;
+
+    const projectDir = path.join(tmpDir, "project");
+    const gruDir = path.join(projectDir, ".gru");
+    fs.mkdirSync(gruDir, { recursive: true }); // .gru exists but awesome-copilot subdir does NOT
+    process.chdir(projectDir);
+
+    const { resolveAwesomeCopilotPath } = await import("../resolve.js");
+    // None exist → returns .gru/awesome-copilot as the "install hint" path
+    expect(resolveAwesomeCopilotPath()).toBe(path.join(gruDir, "awesome-copilot"));
+  });
+
+  it("resolveAwesomeCopilotPath — vendor/awesome-copilot fallback (priority 3)", async () => {
+    delete process.env.GRU_CONFIG_DIR;
+    delete process.env.GRU_AWESOME_COPILOT_PATH;
+
+    const projectDir = path.join(tmpDir, "project");
+    const gruDir = path.join(projectDir, ".gru");
+    // .gru/awesome-copilot does NOT exist
+    fs.mkdirSync(gruDir, { recursive: true });
+
+    // vendor/awesome-copilot DOES exist
+    const vendorAcPath = path.join(projectDir, "vendor", "awesome-copilot");
+    fs.mkdirSync(vendorAcPath, { recursive: true });
+
+    process.chdir(projectDir);
+
+    const { resolveAwesomeCopilotPath } = await import("../resolve.js");
+    expect(resolveAwesomeCopilotPath()).toBe(vendorAcPath);
+  });
+
+  it("resolveAwesomeCopilotPath — vendor fallback found by walking up from subdirectory", async () => {
     delete process.env.GRU_CONFIG_DIR;
     delete process.env.GRU_AWESOME_COPILOT_PATH;
 
     const projectDir = path.join(tmpDir, "project");
     const gruDir = path.join(projectDir, ".gru");
     fs.mkdirSync(gruDir, { recursive: true });
+
+    const vendorAcPath = path.join(projectDir, "vendor", "awesome-copilot");
+    fs.mkdirSync(vendorAcPath, { recursive: true });
+
+    // chdir into a deep subdir
+    const deepDir = path.join(projectDir, "packages", "kernel", "src");
+    fs.mkdirSync(deepDir, { recursive: true });
+    process.chdir(deepDir);
+
+    const { resolveAwesomeCopilotPath } = await import("../resolve.js");
+    expect(resolveAwesomeCopilotPath()).toBe(vendorAcPath);
+  });
+
+  it("resolveAwesomeCopilotPath — .gru/awesome-copilot wins over vendor when both exist", async () => {
+    delete process.env.GRU_CONFIG_DIR;
+    delete process.env.GRU_AWESOME_COPILOT_PATH;
+
+    const projectDir = path.join(tmpDir, "project");
+    const gruDir = path.join(projectDir, ".gru");
+    const gruAcPath = path.join(gruDir, "awesome-copilot");
+    fs.mkdirSync(gruAcPath, { recursive: true }); // priority 2 exists
+
+    const vendorAcPath = path.join(projectDir, "vendor", "awesome-copilot");
+    fs.mkdirSync(vendorAcPath, { recursive: true }); // priority 3 also exists
+
     process.chdir(projectDir);
 
     const { resolveAwesomeCopilotPath } = await import("../resolve.js");
-    expect(resolveAwesomeCopilotPath()).toBe(path.join(gruDir, "awesome-copilot"));
+    // .gru/awesome-copilot (priority 2) should win
+    expect(resolveAwesomeCopilotPath()).toBe(gruAcPath);
   });
 });

@@ -8,38 +8,38 @@ import {
   HumanApprovalRequiredError,
   DelegationBlockedError
 } from "../../../packages/kernel/src/orchestrator/index.js";
+import { loadConfig } from "../../../packages/kernel/src/orchestrator/config.js";
+import { isOptionalOrDisabled, formatProviderStatus } from "../../../packages/kernel/src/orchestrator/status.js";
 import type { ProviderId } from "../../../packages/shared/src/ports/provider.js";
 import type { SddPhase } from "../../../packages/shared/src/ports/agent.js";
 import { runInit, printInitSummary, isValidRuntime, ALL_RUNTIMES } from "./init.js";
 import type { InstallScope, RuntimeId } from "./init.js";
 import { printBanner } from "./banner.js";
 
-function formatStatus(s: { available: boolean; status?: string; kind?: string }): string {
-  if (s.available) {
-    return s.status === "configured" ? "CONFIGURADO" : "READY";
-  }
-  if (s.status === "adapter-missing") return "HOST-MANAGED (PENDIENTE)";
-  if (s.kind === "catalog") return "CATÁLOGO AUSENTE";
-  if (s.kind === "sdk") return "ADAPTER MISSING";
-  return s.status === "incompatible" ? "INCOMPATIBLE" : "MISSING";
-}
-
 async function runStatus(strict: boolean): Promise<void> {
   const statuses = await getProviderStatuses();
+  const { providers: providersFile } = loadConfig();
+  const providersConfig = providersFile.providers as Record<string, { enabled?: boolean }>;
+
   console.log("\nEstado real de providers\n");
   console.table(statuses.map((s) => ({
     provider: s.providerId,
     kind: s.kind ?? "cli",
-    estado: formatStatus(s),
+    estado: formatProviderStatus(s, s.providerId as ProviderId, providersConfig),
     ejecutable: s.executable ?? "-",
     versión: s.version ?? "-",
     motivo: s.reason ?? "OK"
   })));
 
-  const unavailable = statuses.filter((s) => !s.available);
-  if (unavailable.length > 0) {
+  // Only genuinely required-but-missing providers appear here.
+  // Disabled-in-config and optional host-managed/sdk providers are excluded.
+  const actionRequired = statuses.filter(
+    (s) => !s.available && !isOptionalOrDisabled(s.providerId as ProviderId, s, providersConfig)
+  );
+
+  if (actionRequired.length > 0) {
     console.log("\nAcciones necesarias:");
-    for (const s of unavailable) {
+    for (const s of actionRequired) {
       console.log(`- ${s.providerId}: ${s.installHint ?? s.reason}`);
     }
     if (strict) process.exitCode = 2;

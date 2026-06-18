@@ -52,9 +52,8 @@ export function loadConfig(): { config: ProjectConfig; providers: ProvidersFile 
 }
 
 export function isProviderEnabled(providerId: ProviderId, config: ProjectConfig, providers: ProvidersFile): boolean {
-  if (providerId === "local") return true;
-
-  const keyMap: Record<Exclude<ProviderId, "local">, { routingKey: keyof ProjectConfig["routing"]; providerKey: string }> = {
+  const keyMap: Record<ProviderId, { routingKey: keyof ProjectConfig["routing"] | null; providerKey: string }> = {
+    local: { routingKey: null, providerKey: "local" },
     ruflo: { routingKey: "enableRuflo", providerKey: "ruflo" },
     gentlePi: { routingKey: "enableGentlePi", providerKey: "gentlePi" },
     gentlemanCli: { routingKey: "enableGentlemanCli", providerKey: "gentlemanCli" },
@@ -67,7 +66,8 @@ export function isProviderEnabled(providerId: ProviderId, config: ProjectConfig,
   const meta = keyMap[providerId];
   if (!meta) return false;
 
-  const configEnabled = config.routing[meta.routingKey] !== false;
+  // Providers with no routingKey (e.g. "local") are governed solely by providers.yaml.
+  const configEnabled = meta.routingKey === null ? true : config.routing[meta.routingKey] !== false;
   const providerDef = providers.providers[meta.providerKey];
   const providerEnabled = providerDef ? providerDef.enabled !== false : true;
 

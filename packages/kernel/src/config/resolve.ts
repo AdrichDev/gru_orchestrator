@@ -86,15 +86,60 @@ export function resolveRunsDir(): string {
 
 /**
  * Resolves the awesome-copilot catalog directory.
- * Priority:
- *   1. GRU_AWESOME_COPILOT_PATH env var (preserves existing override behavior).
- *   2. <gru-root>/awesome-copilot
- * Note: does NOT fall back to vendor/awesome-copilot — that was a monorepo-only path.
+ * Priority order (first path that exists wins):
+ *   1. GRU_AWESOME_COPILOT_PATH env var — explicit override.
+ *   2. <project-root>/.gru/awesome-copilot — project-scoped install.
+ *   3. <project-root>/vendor/awesome-copilot — in-repo vendored copy (walked up from cwd).
+ *   4. ~/.gru/awesome-copilot — global home fallback.
+ *
+ * If none of the candidate paths exist, returns the .gru path (priority 2) so
+ * that any install hint displayed to the user still makes sense.
  */
 export function resolveAwesomeCopilotPath(): string {
+  // Priority 1: explicit env override (no existence check — caller sets it deliberately).
   const envPath = process.env.GRU_AWESOME_COPILOT_PATH;
   if (envPath) {
     return envPath;
   }
-  return path.join(resolveGruRoot(), "awesome-copilot");
+
+  // Priority 2: project .gru/awesome-copilot
+  const gruRoot = resolveGruRoot();
+  const gruAcPath = path.join(gruRoot, "awesome-copilot");
+  if (fs.existsSync(gruAcPath)) {
+    return gruAcPath;
+  }
+
+  // Priority 3: vendor/awesome-copilot — walk up from cwd to project root.
+  const vendorAcPath = findVendorAwesomeCopilot(process.cwd());
+  if (vendorAcPath) {
+    return vendorAcPath;
+  }
+
+  // Priority 4: ~/.gru/awesome-copilot
+  const homeAcPath = path.join(os.homedir(), ".gru", "awesome-copilot");
+  if (fs.existsSync(homeAcPath)) {
+    return homeAcPath;
+  }
+
+  // None found — return .gru path so install hint still makes sense.
+  return gruAcPath;
+}
+
+/**
+ * Walk up from startDir looking for a vendor/awesome-copilot directory.
+ * Returns the full path if found, otherwise null.
+ */
+function findVendorAwesomeCopilot(startDir: string): string | null {
+  let dir = startDir;
+  while (true) {
+    const candidate = path.join(dir, "vendor", "awesome-copilot");
+    if (fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) {
+      return candidate;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      return null;
+    }
+    dir = parent;
+  }
 }
