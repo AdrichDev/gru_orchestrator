@@ -36,6 +36,7 @@ import { LocalProvider } from "@gru/provider-local";
 
 // Extracted helpers
 import { loadConfig, isProviderEnabled } from "./config.js";
+import { resolveRunsDir } from "../config/resolve.js";
 import { applyPersonas } from "./personas.js";
 import {
   buildReviewResultFromOutput,
@@ -174,8 +175,9 @@ export async function orchestrateTask(
     ? applyPersonas(result.output, prompt, decision.personas)
     : result.output;
 
-  fs.mkdirSync("runs", { recursive: true });
-  const runLogPath = path.join("runs", `run_${Date.now()}_${taskId}.json`);
+  const runsDir = resolveRunsDir();
+  fs.mkdirSync(runsDir, { recursive: true });
+  const runLogPath = path.join(runsDir, `run_${Date.now()}_${taskId}.json`);
   const runLog = {
     taskId,
     prompt,
@@ -380,8 +382,9 @@ export async function orchestrateAgenticTask(
     return gate?.required && (g.status === "failed" || g.status === "blocked");
   });
 
-  fs.mkdirSync("runs", { recursive: true });
-  const runLogPath = path.join("runs", `agentic_${taskId}.json`);
+  const runsDir = resolveRunsDir();
+  fs.mkdirSync(runsDir, { recursive: true });
+  const runLogPath = path.join(runsDir, `agentic_${taskId}.json`);
   fs.writeFileSync(runLogPath, JSON.stringify({ taskId, prompt, phase, assignment, executionResult, reviewResult, testEvidence, gates }, null, 2), "utf-8");
 
   return {

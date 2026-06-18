@@ -4,8 +4,28 @@ import path from "path";
 
 // These tests read real project config files. They are contract tests:
 // if the config drifts to an invalid state, these tests fail immediately.
+//
+// Root discovery: walk up from __dirname looking for the sentinel .mcp.json.
+// This is location-independent — depth is NOT hardcoded, so it works whether
+// the package lives in the monorepo (5 levels deep) or is relocated/published.
 
-const ROOT = path.resolve(__dirname, "../../../../../");
+function findProjectRoot(startDir: string): string {
+  let dir = startDir;
+  while (true) {
+    if (fs.existsSync(path.join(dir, ".mcp.json"))) {
+      return dir;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      // Filesystem root reached without finding sentinel — fall back to startDir.
+      // Tests that require the sentinel will fail with a clear message via beforeAll.
+      return startDir;
+    }
+    dir = parent;
+  }
+}
+
+const ROOT = findProjectRoot(__dirname);
 const MCP_JSON = path.join(ROOT, ".mcp.json");
 const SETTINGS_JSON = path.join(ROOT, ".claude", "settings.json");
 

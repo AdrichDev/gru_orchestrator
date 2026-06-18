@@ -10,6 +10,8 @@ import {
 } from "../../../packages/kernel/src/orchestrator/index.js";
 import type { ProviderId } from "../../../packages/shared/src/ports/provider.js";
 import type { SddPhase } from "../../../packages/shared/src/ports/agent.js";
+import { runInit, printInitSummary } from "./init.js";
+import type { InstallScope } from "./init.js";
 
 function formatStatus(s: { available: boolean; status?: string; kind?: string }): string {
   if (s.available) {
@@ -120,6 +122,7 @@ async function main(): Promise<void> {
     console.log('  pnpm gru --agentic "<prompt>" [--phase apply]');
     console.log("  pnpm gru status   (también /status)");
     console.log("  pnpm gru doctor   (alias de status)");
+    console.log("  pnpm gru init [--scope project|global] [--force]");
     return;
   }
 
@@ -131,15 +134,41 @@ async function main(): Promise<void> {
   const sddId = sddIdx !== -1 ? args[sddIdx + 1] : "current";
 
   const filteredArgs = args.filter((a, i) => {
-    if (a === "--strict" || a === "--agentic") return false;
-    if (a === "--phase" || a === "--sdd") return false;
-    if (i > 0 && (args[i - 1] === "--phase" || args[i - 1] === "--sdd")) return false;
+    if (a === "--strict" || a === "--agentic" || a === "--force") return false;
+    if (a === "--phase" || a === "--sdd" || a === "--scope") return false;
+    if (i > 0 && (args[i - 1] === "--phase" || args[i - 1] === "--sdd" || args[i - 1] === "--scope")) return false;
     return true;
   });
   const commandOrPrompt = filteredArgs.join(" ");
 
   if (["status", "/status", "doctor", "/doctor"].includes(commandOrPrompt.toLowerCase())) {
     await runStatus(strict);
+    return;
+  }
+
+  if (["init", "/init"].includes(commandOrPrompt.toLowerCase())) {
+    const scopeIdx = args.indexOf("--scope");
+    let scopeValue: InstallScope | undefined;
+    if (scopeIdx !== -1) {
+      const raw = args[scopeIdx + 1];
+      const validScopes: ReadonlyArray<InstallScope> = ["project", "global"];
+      if (!validScopes.includes(raw as InstallScope)) {
+        console.error(
+          `gru init: invalid --scope value "${raw}". Valid values: project, global.`
+        );
+        process.exitCode = 2;
+        return;
+      }
+      scopeValue = raw as InstallScope;
+    }
+    const force = args.includes("--force");
+    try {
+      const result = await runInit({ scope: scopeValue, force });
+      printInitSummary(result);
+    } catch (err) {
+      console.error("gru init failed:", err instanceof Error ? err.message : String(err));
+      process.exitCode = 1;
+    }
     return;
   }
 

@@ -5,11 +5,12 @@ import {
   ProviderId,
 } from "../../../shared/src/ports/provider.js";
 import { ProjectConfig, ProvidersFile } from "../../../shared/src/types/config.js";
+import { resolveConfigPath, resolveProvidersPath } from "../config/resolve.js";
 
 export function loadConfig(): { config: ProjectConfig; providers: ProvidersFile } {
   try {
-    const configPath = path.resolve(".gru/config.yaml");
-    const providersPath = path.resolve(".gru/providers.yaml");
+    const configPath = resolveConfigPath();
+    const providersPath = resolveProvidersPath();
 
     const configContent = fs.existsSync(configPath) ? fs.readFileSync(configPath, "utf-8") : "";
     const providersContent = fs.existsSync(providersPath) ? fs.readFileSync(providersPath, "utf-8") : "";

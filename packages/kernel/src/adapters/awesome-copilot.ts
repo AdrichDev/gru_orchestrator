@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import YAML from "yaml";
 import { AwesomeCopilotProvider } from "@gru/provider-awesome-copilot";
+import { resolveAwesomeCopilotPath } from "../config/resolve.js";
 import type {
   AgentCatalog,
   AgentDescriptor,
@@ -16,9 +17,7 @@ import type {
 import type { ExecutionResult } from "../../../shared/src/ports/results.js";
 import type { ProviderId } from "../../../shared/src/ports/provider.js";
 
-const DEFAULT_AC_ROOT = path.resolve(
-  process.env.GRU_AWESOME_COPILOT_PATH ?? "vendor/awesome-copilot"
-);
+const DEFAULT_AC_ROOT = resolveAwesomeCopilotPath();
 
 interface AcFrontmatter {
   name?: string;

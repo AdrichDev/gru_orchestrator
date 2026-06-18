@@ -17,10 +17,11 @@ import type {
 import type { ExecutionResult } from "../../../shared/src/ports/results.js";
 import type { ProviderId } from "../../../shared/src/ports/provider.js";
 
-// Resolved from CWD (project root). From D:\Adrian\10. IA\Gru-Orchestrator, ../ruflo = D:\Adrian\10. IA\ruflo.
-const DEFAULT_RUFLO_PATH = path.resolve(
-  process.env.GRU_RUFLO_PATH ?? path.join("..", "ruflo")
-);
+// Ruflo agent catalog path is env-only. No local-path default — the agentic adapter
+// uses pnpm dlx ruflo@latest for execution; the catalog scan is optional.
+// When GRU_RUFLO_PATH is unset or the directory is absent, getAgentCatalog() returns []
+// and checkAvailability() reports unavailable. No crash.
+const DEFAULT_RUFLO_PATH = process.env.GRU_RUFLO_PATH ?? "";
 
 interface SkillSpec {
   name?: string;
