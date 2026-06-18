@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { resolveAwesomeCopilotPath } from "../../../kernel/src/config/resolve.js";
 import { GruProvider, ProviderAvailability, ProviderTask, ProviderResult } from "../../../shared/src/ports/provider.js";
 
 function walkSkillFiles(root: string, limit = 500): string[] {
@@ -21,7 +22,7 @@ export class AwesomeCopilotProvider implements GruProvider {
   private readonly root: string;
 
   constructor(root?: string) {
-    this.root = root ?? path.resolve(process.env.GRU_AWESOME_COPILOT_PATH ?? "vendor/awesome-copilot");
+    this.root = root ?? resolveAwesomeCopilotPath();
   }
 
   canHandle(task: ProviderTask): boolean {
@@ -38,7 +39,7 @@ export class AwesomeCopilotProvider implements GruProvider {
       kind: "catalog",
       executable: available ? skillsDir : undefined,
       reason: available ? undefined : `No se encontró el catálogo real en ${skillsDir}`,
-      installHint: "Clona https://github.com/github/awesome-copilot en vendor/awesome-copilot o define GRU_AWESOME_COPILOT_PATH."
+      installHint: "Clona https://github.com/github/awesome-copilot en .gru/awesome-copilot o define GRU_AWESOME_COPILOT_PATH."
     };
   }
 

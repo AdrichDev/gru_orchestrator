@@ -1,0 +1,9 @@
+skills:
+  personas:
+    caveman:
+      enabled: true
+      path: "packages/skills/src/personas/caveman"
+
+    devilsAdvocate:
+      enabled: true
+      path: "packages/skills/src/personas/devils-advocate"
