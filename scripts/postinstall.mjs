@@ -59,9 +59,36 @@ function isDevContext() {
   if (envOverride === "dev") return true;
   if (envOverride === "global") return false;
 
-  // Heuristic: dev/monorepo checkout has a `packages/` directory at script root.
-  // A globally installed package has only dist/, templates/, scripts/, etc.
-  return existsSync(join(SCRIPT_ROOT, "packages"));
+  // SEC-06: robust detection — check whether we are running from inside a
+  // node_modules installation path (installed/global context) or from a source
+  // checkout (dev context).
+  //
+  // Strategy (in priority order, first truthy result wins):
+  //
+  // 1. node_modules path: if __filename contains `node_modules` we are running
+  //    as an installed package, NOT a source checkout → global context.
+  //
+  // 2. package.json "version" sentinel: a published package always has a
+  //    package.json; in a source checkout the one next to scripts/ also does,
+  //    but the published package will NOT have a `packages/` directory alongside.
+  //    We check for `packages/` as a secondary confirmer only.
+  //
+  // 3. Fallback: presence of `packages/` directory at SCRIPT_ROOT (original
+  //    heuristic retained as last resort so dev still gets dev context).
+  const normalised = __filename.replace(/\\/g, "/");
+  if (normalised.includes("/node_modules/")) {
+    // Running from an installed package — global context.
+    return false;
+  }
+
+  // If there is a `packages/` directory sibling to the script root, we are in
+  // a monorepo source checkout — dev context.
+  if (existsSync(join(SCRIPT_ROOT, "packages"))) {
+    return true;
+  }
+
+  // No `packages/` and not in node_modules → assume global install.
+  return false;
 }
 
 // ---------------------------------------------------------------------------
