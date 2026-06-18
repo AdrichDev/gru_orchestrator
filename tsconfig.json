@@ -8,46 +8,45 @@
     "skipLibCheck": true,
     "rootDir": ".",
     "outDir": "dist",
-    "baseUrl": ".",
     "paths": {
       "@gru/shared": [
-        "packages/shared/src/ports/index.ts"
+        "./packages/shared/src/ports/index.ts"
       ],
       "@gru/shared/*": [
-        "packages/shared/src/*"
+        "./packages/shared/src/*"
       ],
       "@gru/kernel/*": [
-        "packages/kernel/src/*"
+        "./packages/kernel/src/*"
       ],
       "@gru/providers/*": [
-        "packages/providers/*"
+        "./packages/providers/*"
       ],
       "@gru/skills/*": [
-        "packages/skills/src/*"
+        "./packages/skills/src/*"
       ],
       "@gru/provider-ruflo": [
-        "packages/providers/ruflo/src/index.ts"
+        "./packages/providers/ruflo/src/index.ts"
       ],
       "@gru/provider-awesome-copilot": [
-        "packages/providers/awesome-copilot/src/index.ts"
+        "./packages/providers/awesome-copilot/src/index.ts"
       ],
       "@gru/provider-ecc": [
-        "packages/providers/ecc/src/index.ts"
+        "./packages/providers/ecc/src/index.ts"
       ],
       "@gru/provider-engram": [
-        "packages/providers/engram/src/index.ts"
+        "./packages/providers/engram/src/index.ts"
       ],
       "@gru/provider-gentle-pi": [
-        "packages/providers/gentle-pi/src/index.ts"
+        "./packages/providers/gentle-pi/src/index.ts"
       ],
       "@gru/provider-gentleman-cli": [
-        "packages/providers/gentleman-cli/src/index.ts"
+        "./packages/providers/gentleman-cli/src/index.ts"
       ],
       "@gru/provider-local": [
-        "packages/providers/local/src/index.ts"
+        "./packages/providers/local/src/index.ts"
       ],
       "@gru/provider-deepagents": [
-        "packages/providers/deepagents/src/index.ts"
+        "./packages/providers/deepagents/src/index.ts"
       ]
     },
     "types": [
