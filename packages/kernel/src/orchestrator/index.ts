@@ -231,7 +231,14 @@ export async function orchestrateTask(
   }
 
   // ── Devil's Advocate pre-flight veto ───────────────────────────────────────
-  const devilFinding = reviewDelegation({ prompt, providerId, decision, availability });
+  const devilFinding = reviewDelegation({
+    prompt,
+    providerId,
+    decision,
+    availability,
+    rigidity: config.devil?.rigidity ?? "strict",
+    minConfidence: config.devil?.minConfidence ?? 30,
+  });
   if (devilFinding.blocked) {
     throw new DelegationBlockedError(providerId, devilFinding.reason ?? "motivo no especificado");
   }

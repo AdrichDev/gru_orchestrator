@@ -38,3 +38,18 @@ routing:
   enableDeepagents: true
   enableEngram: true
   enableAwesomeCopilot: true
+
+# devil: controls how aggressively Devil's Advocate reviews routing confidence.
+# Hard rules (provider unavailable, catalog-as-executor) always block regardless of level.
+# Soft rule (confidence check) is governed by the rigidity level below.
+#
+# rigidity:
+#   "advisory"  — never warns or blocks on confidence (hard rules still apply).
+#   "strict"    — (DEFAULT) warns when confidence < minConfidence; never blocks on confidence.
+#   "paranoid"  — warns when confidence < max(minConfidence, 60); BLOCKS when < minConfidence.
+#
+# minConfidence: minimum confidence % that triggers the block/warn threshold. Default: 30.
+#
+# devil:
+#   rigidity: strict
+#   minConfidence: 30

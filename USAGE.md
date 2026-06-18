@@ -193,6 +193,40 @@ instalado, bloquea la tarea (`[BLOCKED]`) y muestra el hint exacto para instalar
 
 ---
 
+## Devil's Advocate — Niveles de rigidez
+
+El Devil's Advocate revisa cada delegación antes de que el provider se ejecute.
+Tiene **reglas duras** (siempre bloquean) y una **regla blanda** (confianza de routing,
+configurable).
+
+### Reglas duras — siempre activas independientemente del nivel
+
+| Regla | Efecto |
+| :--- | :--- |
+| Provider no disponible | BLOCKED — Gru nunca simula ejecuciones. |
+| Provider de tipo `catalog` con intención de ejecución | BLOCKED — catálogos son search-only. |
+
+### Regla blanda — gobernada por `devil.rigidity`
+
+| Nivel | Comportamiento |
+| :--- | :--- |
+| `advisory` | Nunca avisa ni bloquea por confianza baja. Solo reglas duras activas. |
+| `strict` | **(DEFAULT)** Avisa cuando confianza < `minConfidence` (default 30%). Nunca bloquea por confianza. Reproduce exactamente el comportamiento anterior — config ausente es idéntico. |
+| `paranoid` | Avisa cuando confianza < `max(minConfidence, 60)`; **BLOQUEA** cuando confianza < `minConfidence`. El mensaje pide confirmar el provider explícitamente. |
+
+### Configuración en `.gru/config.yaml`
+
+```yaml
+devil:
+  rigidity: strict        # advisory | strict | paranoid (default: strict)
+  minConfidence: 30       # umbral de confianza % (default: 30)
+```
+
+Config ausente o sección `devil` ausente = comportamiento `strict` con `minConfidence 30`
+(retrocompatibilidad total).
+
+---
+
 ## Variables de entorno
 
 | Variable | Para qué |

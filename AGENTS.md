@@ -262,7 +262,7 @@ Short reference: `local` | `ruflo` | `gentlePi` | `gentlemanCli` | `ecc` | `deep
 
 → full persona descriptions: `docs/harness-reference.md#core-personas`
 
-Active personas: `devilsAdvocate` (risk/block) | `caveman` (output compression)
+Active personas: `devilsAdvocate` (risk/block, configurable rigidity via `devil.rigidity` in `.gru/config.yaml` — see USAGE.md) | `caveman` (output compression)
 
 ---
 
