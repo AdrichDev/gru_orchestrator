@@ -6,6 +6,12 @@
 
 > **"Gru coordinates. Minions produce. Policies govern. Human approves."**
 
+<div align="center">
+
+![Node](https://img.shields.io/badge/node-%3E%3D20-3c873a) ![Runtime](https://img.shields.io/badge/runtime-strict-facc15) ![Niveaux](https://img.shields.io/badge/niveaux-0--4-64748b) ![Harness](https://img.shields.io/badge/blue%2Fred%2Fpurple-cybersec-8b5cf6)
+
+</div>
+
 ---
 
 <div align="center">
@@ -16,100 +22,129 @@
 
 ---
 
-## 🚀 Installation & Configuration
-
-Suivez ces étapes pour cloner et installer l'environnement de développement de **Gru Harness** :
-
-### 1. Cloner le dépôt
-```bash
-git clone https://github.com/AdrichDev/gru_orchestrator.git
-cd gru_orchestrator
-```
-
-### 2. Installer les dépendances du projet
-Ce projet est un monorepo géré avec **pnpm** :
-```bash
-pnpm install
-```
-
-### 3. Installer les Providers globaux requis
-Si vous ne disposez pas des binaires externes requis pour l'orchestration, installez-les en exécutant :
-
-* **ruflo** (Construction et orchestration multi-agents) :
-  ```bash
-  npm install -g ruflo
-  ```
-* **gentlePi / gentlemanCli** (Spécification, SDD, et environnement) :
-  ```bash
-  npm install -g @gentle-ai/pi
-  ```
-* **engram** (Mémoire sémantique et persistante) :
-  Installez le binaire depuis son canal officiel et assurez-vous qu'il est disponible dans votre variable d'environnement `PATH` ou configuré dans `ENGRAM_BIN`.
-
----
-
 ## 🧠 Qu'est-ce que Gru Harness ?
 
-Gru est un orchestrateur et un architecte conçu pour centraliser la prise de décision, évaluer les risques et coordonner les sous-agents (minions) pour le développement de logiciels.
+Gru est un **harness orchestrateur de LLM** : une couche de coordination qui centralise la prise de décision, évalue le risque de chaque tâche et délègue l'exécution à des providers spécialisés (Ruflo, Gentle-Pi, ECC, Engram, Awesome Copilot…). Il s'exécute dans Claude Code, Codex, Gemini CLI, OpenCode, Cursor ou Antigravity — ou en autonome via la CLI `gru`.
 
-### Principes Fondamentaux
-* **Gru ne code pas directement** : Gru analyse la structure, conçoit des plans dans `implementation_plan.md` et délégue l'écriture du produit à des minions spécialisés.
-* **Scan du système de fichiers** : Avant de prendre toute décision de conception ou de classifier une tâche, une analyse du dépôt est exécutée pour cartographier les dépendances et les risques.
-* **Flux basés sur les niveaux** : Les tâches sont classées du niveau 0 (trivial) au niveau 4 (critique), en appliquant des processus d'approbation spécifiques basés sur leur niveau de risque.
+### Principes fondamentaux
+
+* **Gru ne code pas directement** : il analyse, classe et délègue. Les Minions produisent les artefacts.
+* **Runtime strict** : Gru **ne simule jamais de réponses**. Si un provider n'est pas installé, il bloque la tâche et indique comment l'installer.
+* **Porte d'approbation humaine** : toute tâche destructive, de production, de sécurité, sur la branche principale ou engendrant un coût requiert votre approbation explicite. La porte est bilingue (ES/EN) et ne se négocie pas par prompt.
+* **Workflows par niveaux** : les tâches sont classées du Niveau 0 (trivial) au Niveau 4 (critique) via une table de décision complexité + risque.
 
 ---
 
-## 🎛️ Abstraction du Runtime de Harness (Harness Runtime Abstraction)
+## 🧩 Minions vs Providers
 
-Gru utilise une couche d'abstraction pour s'exécuter dans différents environnements d'exécution (*harnesses*) sans intégrer de modèles LLM ni de fournisseurs spécifiques dans son noyau.
+Deux concepts distincts, **non** interchangeables :
 
-### Modes d'Exécution
-* **`host-managed`** : Le harness actif (Claude Code, Codex, Gemini, Pi) gère directement le modèle natif et l'exécution des outils. Aucune connexion de SDK secondaire n'est ouverte pour le LLM.
-* **`sdk-managed`** : Mode d'exécution autonome (`standalone`). Se connecte directement à l'API d'un fournisseur de LLM en utilisant les variables d'environnement configurées (`GRU_DEEPAGENTS_PROVIDER`, `GRU_DEEPAGENTS_API_KEY_ENV`, etc.).
+* **Minion** — un *rôle* délégué (builder, reviewer, architect, tester, security, devil, pm, docs, filesystem, context7, memory, mcp). C'est l'**unité de travail** que Gru délègue. 13 rôles, chacun avec une responsabilité unique.
+* **Provider** — un *backend* d'exécution (`local`, `ruflo`, `gentlePi`, `gentlemanCli`, `ecc`, `deepagents`, `engram`, `awesomeCopilot`). C'est le **runtime** qui exécute le travail du Minion.
 
-### Flux d'Exécution
-```text
-pnpm gru "prompt"
-        ↓
-HarnessDetector.detect()            ← Identifie l'environnement d'exécution actif
-        ↓
-AdapterRegistry.get(harnessId)      ← Résout le HarnessAdapter correspondant
-        ↓
-adapter.supports(requiredCapability)?
-   ├── Oui → adapter.execute(task)     ← Exécution native optimisée pour l'environnement
-   └── Non → fallbackSequentially()    ← Exécution séquentielle alternative de Gru Core
-        ↓
-GruResult → Console du système
+> Un Minion est un RÔLE. Un Provider est un BACKEND. Gru choisit les deux selon le niveau et le type de tâche.
+
+---
+
+## 📊 Niveaux de tâche
+
+Gru note chaque tâche (complexité + risque) et la classe avant d'agir :
+
+| Niveau | Nom | Workflow (résumé) |
+|:---:|---|---|
+| **0** | Trivial | `local` |
+| **1** | Petite | `local` + devil/caveman |
+| **2** | Moyenne | architect léger → mini-spec → builder → tester → reviewer |
+| **3** | Grande | architect → devil → spec → builder par unité → tester → security → reviewer |
+| **4** | Critique | + Ruflo CONSULT + **approbation humaine** + reviewer indépendant |
+
+Le **Filesystem Scan** est obligatoire avant toute classification. Les preuves du dépôt peuvent élever le niveau, jamais le baisser sans preuve.
+
+---
+
+## 🚀 Démarrage rapide
+
+```bash
+pnpm add -g github:AdrichDev/gru_orchestrator   # installe `gru` (dépôt privé, Node 20+)
+cd votre-projet
+gru init                    # menu interactif : choisir runtime(s) + scope
+gru status                  # état réel de chaque provider
+gru "<prompt>"              # orchestrer une tâche : classer → router → exécuter
 ```
 
-### Matrice des Capacités (`GruCapability`)
-Chaque environnement d'exécution déclare les capacités qu'il prend en charge dynamiquement via le contrat `HarnessAdapter` :
-* **`native-subagents`** : Capacité de l'environnement à lancer des sous-agents de manière native sans consommer la capacité de jetons du processus principal (ex. Claude Code).
-* **`file-tools`** : Outils intégrés pour la lecture et l'écriture de fichiers.
-* **`web-search`** : Recherche sur Internet ou navigation fournie par le système hôte.
-* **`code-execution`** : Bac à sable d'exécution de code ou environnement d'exécution sécurisé.
-* **`memory`** : Persistance du contexte et de la mémoire à long terme.
-* **`approval-flow`** : Flux interactifs pour demander et accorder des autorisations.
-
-### Synchronisation Canonique (`pnpm gru sync`)
-Gru maintient les définitions de règles, workflows et compétences de manière centralisée dans sa structure native. Lors de l'exécution de la commande de synchronisation :
-1. Il lit les dossiers `gru/skills/`, `gru/workflows/` et `gru/policies/`.
-2. Il les compile et les distribue de manière idempotente dans les répertoires spécifiques de chaque harness : `.claude/`, `.codex/`, `.gemini/` et `.pi/`.
-3. Le système affiche un diff des modifications proposées avant d'écraser, protégeant les modifications manuelles à moins d'utiliser le flag `--force`.
+Le `postinstall` prépare `~/.gru/` avec la config par défaut. Le catalogue awesome-copilot
+est **opt-in** (`gru init --awesome-copilot`) ; il n'est pas téléchargé automatiquement.
 
 ---
 
-## 🔌 Catalogue des Providers
+## ⌨️ Commandes
 
-Gru utilise une architecture modulaire basée sur des **Providers** pour interagir avec l'environnement et exécuter les tâches déléguées :
+```bash
+gru "<prompt>"                       # orchestrer : classer → porte → router → exécuter
+gru status                           # état réel des providers (alias : doctor, /status)
+gru status --strict                  # CI : code de sortie 2 si un provider requis manque
+gru --agentic "<prompt>"             # pipeline agentic : executor → reviewer → tester + portes
+gru --agentic "<prompt>" --phase apply --sdd mon-changement
+gru init [options]                   # scaffolding multi-runtime
+```
 
-| Provider ID | Exécutable / Commande | Rôle et Responsabilité |
-| :--- | :--- | :--- |
-| **`local`** | Commande directe | Exécution de tâches locales dans l'espace de travail (système de fichiers, git, npm, tests). |
-| **`ruflo`** | `ruflo` | Orchestrateur multi-agents pour les tâches complexes et les swarms parallèles de minions. |
-| **`gentlePi`** | `gentle-ai/pi` | Support et outils pour la spécification du système sous la méthodologie SDD/OpenSpec. |
-| **`gentlemanCli`** | `gentle-ai` | Diagnostics d'environnement, mises à jour des compétences et synchronisation d'état. |
-| **`ecc`** | `ecc` | Audit des politiques de sécurité, analyse du code et détection des vulnérabilités CVE. |
-| **`deepagents`** | `deepagents` | Workflows à long terme et threads de tâches persistants. |
-| **`engram`** | `engram` | Accès à la mémoire persistante des décisions et au contexte historique du projet. |
-| **`awesomeCopilot`** | Catalogue local | Recherche de compétences (`SKILL.md`) et de templates dans le dépôt de la communauté. |
+Chaque exécution est journalisée dans `runs/run_*.json` (classification, niveau, provider,
+code de sortie et présence d'une approbation humaine). En CI / non-TTY, une tâche à risque
+**n'est pas exécutée** : elle se termine avec le code 2 — elle ne simule jamais.
+
+---
+
+## 🔌 Providers
+
+Gru délègue à des providers spécialisés : `local`, `ruflo`, `gentlePi`, `gentlemanCli`,
+`ecc`, `deepagents`, `engram` et `awesomeCopilot` (catalogue en recherche seule). Sous le
+runtime strict, un provider absent bloque la tâche avec son indication d'installation —
+sans repli silencieux.
+
+---
+
+## 🛡️ Harness de cybersécurité (Blue / Red / Purple)
+
+Pour toute demande d'audit, d'exploitation, de durcissement ou de modélisation de menaces,
+Gru délègue aux minions de cybersécurité. Le travail offensif est **toujours** borné par
+`cybersec-minion-contract.md` (périmètre autorisé uniquement, lab/sandbox, sans cibles réelles).
+
+| Équipe | Minions |
+|---|---|
+| 🔴 **RED** | redteam-coordinator · recon · exploit |
+| 🔵 **BLUE** | blueteam-coordinator · hardening · detect · incident |
+| 🟣 **PURPLE** | purpleteam-coordinator (pilote la boucle + persiste les apprentissages) |
+
+**Boucle cyclique :** `RECON → EXPLOIT → ASSESS → HARDEN → DETECT → REAUDIT → LEARN → répéter`.
+Une brèche du Red est un constat OPEN ; le Blue doit le corriger **et** ajouter une détection pour le clôturer.
+`HARDENED` n'est jamais déclaré tant qu'un constat OPEN subsiste.
+→ [docs/cybersec/ATTACK-DEFENSE-PLAYBOOK.md](../cybersec/ATTACK-DEFENSE-PLAYBOOK.md)
+
+---
+
+## 😈 Devil's Advocate
+
+Une persona de veto qui conteste chaque décision. La rigidité est configurable dans
+`.gru/config.yaml` (`devil.rigidity`) :
+
+| Niveau | Comportement |
+|---|---|
+| `advisory` | avertit, ne bloque pas |
+| `strict` *(par défaut)* | bloque les tâches à risque sans justification |
+| `paranoid` | exige une approbation explicite même pour les tâches moyennes |
+
+Les **règles dures** (destructif, production, sécurité, coût) sont toujours actives, quel
+que soit le niveau de rigidité. → détails dans [USAGE.md](../../USAGE.md#devils-advocate--niveles-de-rigidez).
+
+---
+
+## 📖 Documentation
+
+* **[USAGE.md](../../USAGE.md)** — référence complète : commandes, `gru init`, providers, variables d'environnement et dépannage.
+* **[STRICT_PROVIDER_RUNTIME.md](../../STRICT_PROVIDER_RUNTIME.md)** — le runtime strict des providers.
+* **[SDD.md](../../SDD.md)** — Spec-Driven Development : phases, persistance et format Engram.
+* **[docs/harness-reference.md](../harness-reference.md)** — catalogue de providers, personas, workflows et project intake.
+* **[docs/cybersec/ATTACK-DEFENSE-PLAYBOOK.md](../cybersec/ATTACK-DEFENSE-PLAYBOOK.md)** — playbook red/blue/purple.
+
+Développement / contribuer : clonez le dépôt, `pnpm install` et utilisez `pnpm gru ...` —
+<https://github.com/AdrichDev/gru_orchestrator>.
