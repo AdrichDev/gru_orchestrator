@@ -7,10 +7,14 @@
  *
  * Root CLAUDE.md, AGENTS.md, GEMINI.md are byte-identical to the canonical
  * (shared header, no asymmetric GENERATED marker). They are NOT in TARGETS —
- * they are maintained as direct copies of AGENTS.md.
+ * they are maintained as direct copies of AGENTS.md. Claude Code, Codex and
+ * Gemini load these root files, so no plain-copy subdir mirrors are generated
+ * for them.
  *
- * All subdir copies (.claude/CLAUDE.md, .codex/AGENTS.md, etc.) and templates/
- * mirrors carry the GENERATED header and are produced by this script.
+ * Generated targets are: the .config/opencode/AGENTS.md live file (OpenCode
+ * reads its own config dir, not the repo root), the .cursor/.qwen live files
+ * (format-adapted, no root equivalent), and the templates/ mirrors consumed by
+ * `gru init` when it scaffolds OTHER projects. All carry the GENERATED header.
  *
  * Usage:   node scripts/generate-harness.mjs
  * npm:     pnpm harness:gen
@@ -176,12 +180,18 @@ const TEMPLATES = path.join(REPO_ROOT, "templates");
  * or by running `pnpm harness:gen` (which also syncs them via the copy step in main()).
  */
 export const TARGETS = [
-  // Plain-copy subdir live files (carry GENERATED header)
-  { dest: path.join(REPO_ROOT, ".claude", "CLAUDE.md"),             kind: "plainCopy" },
-  { dest: path.join(REPO_ROOT, ".codex", "AGENTS.md"),              kind: "plainCopy" },
-  { dest: path.join(REPO_ROOT, ".gemini", "GEMINI.md"),             kind: "plainCopy" },
+  // NOTE: plain-copy subdir LIVE files for Claude / Codex / Gemini
+  // (.claude/CLAUDE.md, .codex/AGENTS.md, .gemini/GEMINI.md) are intentionally
+  // NOT generated. Those runtimes read the canonical file from the repo root
+  // (CLAUDE.md / AGENTS.md / GEMINI.md), so the subdir copies were pure
+  // duplication. The templates/ mirrors below are kept because `gru init`
+  // copies them when scaffolding OTHER projects.
+  //
+  // OpenCode is the exception: it resolves its instructions from
+  // .config/opencode/AGENTS.md and is not guaranteed to read the repo-root
+  // AGENTS.md, so this one subdir live copy is kept explicitly.
   { dest: path.join(REPO_ROOT, ".config", "opencode", "AGENTS.md"), kind: "plainCopy" },
-  // Format-adapted live file
+  // Format-adapted live file (no root equivalent — Cursor reads .cursor/rules/*)
   { dest: path.join(REPO_ROOT, ".cursor", "rules", "gru.mdc"),      kind: "cursorMdcAdapter" },
   // QWEN live file
   { dest: path.join(REPO_ROOT, ".qwen", "QWEN.md"),                 kind: "qwenAdapter" },
