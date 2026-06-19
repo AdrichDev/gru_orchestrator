@@ -1,28 +1,45 @@
 import { createDeepAgent } from "deepagents";
 import type { GruProvider, ProviderAvailability, ProviderTask, ProviderResult } from "../../../shared/src/ports/provider.js";
+import type { HarnessAdapter, HarnessId } from "../../../shared/src/ports/harness.js";
 import { detectHarness } from "../../../shared/src/runtime/harness.js";
+import { resolveHarnessAdapter } from "../../../kernel/src/adapters/harness-registry.js";
 
 export type DeepAgentsMode = "host-managed" | "sdk-managed" | "disabled";
 
-function resolveMode(): DeepAgentsMode {
+function resolveMode(detect: () => HarnessId): DeepAgentsMode {
   const envMode = process.env.GRU_DEEPAGENTS_MODE;
   if (envMode === "host-managed") return "host-managed";
   if (envMode === "sdk-managed") return "sdk-managed";
   if (envMode === "disabled") return "disabled";
   // auto: host-managed if inside a known harness, sdk-managed otherwise
-  return detectHarness() !== "standalone" ? "host-managed" : "sdk-managed";
+  return detect() !== "standalone" ? "host-managed" : "sdk-managed";
+}
+
+export interface DeepagentsProviderOptions {
+  /** Harness detection — injectable for tests. Defaults to env-based detectHarness. */
+  detect?: () => HarnessId;
+  /** HarnessAdapter resolver — injectable for tests. Defaults to the kernel registry. */
+  resolveAdapter?: (id: HarnessId) => HarnessAdapter;
 }
 
 export class DeepagentsProvider implements GruProvider {
   id = "deepagents" as const;
+
+  private readonly detect: () => HarnessId;
+  private readonly resolveAdapter: (id: HarnessId) => HarnessAdapter;
+
+  constructor(opts: DeepagentsProviderOptions = {}) {
+    this.detect = opts.detect ?? detectHarness;
+    this.resolveAdapter = opts.resolveAdapter ?? resolveHarnessAdapter;
+  }
 
   canHandle(task: ProviderTask): boolean {
     return /workflow|checkpoint|persistente|larga duraci[oó]n/i.test(task.prompt);
   }
 
   async checkAvailability(): Promise<ProviderAvailability> {
-    const mode = resolveMode();
-    const harness = detectHarness();
+    const mode = resolveMode(this.detect);
+    const harness = this.detect();
 
     if (mode === "disabled") {
       return {
@@ -35,15 +52,28 @@ export class DeepagentsProvider implements GruProvider {
       };
     }
 
-    // host-managed: harness detected, but HarnessAdapter not yet implemented
+    // host-managed: delegate to the active HarnessAdapter. Available only when
+    // that adapter reports ready — never opens a secondary SDK connection.
     if (mode === "host-managed") {
+      const adapter = this.resolveAdapter(harness);
+      const adapterAvail = await adapter.checkAvailability();
+      if (adapterAvail.status === "ready") {
+        return {
+          providerId: this.id,
+          available: true,
+          status: "ready",
+          kind: "sdk",
+          executable: `harness:${harness} (host-managed)`,
+          version: adapterAvail.version
+        };
+      }
       return {
         providerId: this.id,
         available: false,
         status: "adapter-missing",
         kind: "sdk",
-        reason: `DeepAgents host-managed requiere HarnessAdapter (pendiente). Harness: ${harness}. No se abre conexión SDK secundaria.`,
-        installHint: "Implementa HarnessAdapter. Ver openspec/harness-runtime-abstraction-sdd.md."
+        reason: `DeepAgents host-managed: HarnessAdapter '${harness}' no disponible (${adapterAvail.reason ?? adapterAvail.status}). No se abre conexión SDK secundaria.`,
+        installHint: "Implementa o activa el HarnessAdapter para este harness. Ver openspec/harness-runtime-abstraction-sdd.md."
       };
     }
 
@@ -93,6 +123,26 @@ export class DeepagentsProvider implements GruProvider {
         output: "",
         error: availability.reason ?? "DeepAgents no disponible.",
         exitCode: 1
+      };
+    }
+
+    // host-managed: the active harness owns the model. Delegate to its adapter
+    // and NEVER instantiate createDeepAgent (no secondary SDK connection).
+    if (resolveMode(this.detect) === "host-managed") {
+      const harness = this.detect();
+      const adapter = this.resolveAdapter(harness);
+      const result = await adapter.execute({
+        id: task.taskId,
+        prompt: task.prompt,
+        metadata: task.metadata
+      });
+      return {
+        providerId: this.id,
+        success: result.success,
+        output: result.output,
+        error: result.error?.message,
+        exitCode: result.success ? 0 : 1,
+        executedCommand: `harness(${harness}).execute via HarnessAdapter [host-managed, no SDK]`
       };
     }
 

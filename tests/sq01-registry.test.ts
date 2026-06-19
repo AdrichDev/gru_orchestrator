@@ -14,18 +14,21 @@ import {
   registerProvider,
   getRegisteredProviders,
 } from "../packages/kernel/src/orchestrator/index.js";
-import type { GruProvider, ProviderTask, ProviderResult, ProviderAvailability } from "../packages/shared/src/ports/provider.js";
+import type { GruProvider, ProviderId, ProviderTask, ProviderResult, ProviderAvailability } from "../packages/shared/src/ports/provider.js";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+// Third-party stub: its id is an arbitrary string flowing through the
+// ProviderId-typed extension seam (registerProvider), cast at the boundary.
 class StubProvider implements GruProvider {
-  constructor(public readonly id: string) {}
+  readonly id: ProviderId;
+  constructor(id: string) { this.id = id as ProviderId; }
   canHandle(_task: ProviderTask): boolean { return false; }
   async checkAvailability(): Promise<ProviderAvailability> {
-    return { providerId: this.id as never, available: true, status: "ready" };
+    return { providerId: this.id, available: true, status: "ready" };
   }
   async run(_task: ProviderTask): Promise<ProviderResult> {
-    return { providerId: this.id as never, success: true, output: `stub:${this.id}` };
+    return { providerId: this.id, success: true, output: `stub:${this.id}` };
   }
 }
 

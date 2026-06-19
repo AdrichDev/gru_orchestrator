@@ -7,9 +7,15 @@ DeepAgents abre una conexión SDK secundaria aunque Gru ya esté dentro de un ha
 (Claude, Codex, Gemini, Pi) que gestiona el modelo por su cuenta.
 
 Parche de contención aplicado (ver providers/deepagents):
-- `host-managed` detectado pero devuelve `adapter-missing`, no READY.
 - `sdk-managed` requiere `GRU_DEEPAGENTS_PROVIDER` + `GRU_DEEPAGENTS_API_KEY_ENV`.
 - Modelo no está hardcodeado.
+
+Estado actual (S6 + AdapterRegistry implementados):
+- `host-managed` delega al `HarnessAdapter` activo vía `resolveHarnessAdapter`
+  (`packages/kernel/src/adapters/harness-registry.ts`). No abre conexión SDK secundaria.
+- Con `claude` activo → `ClaudeHarnessAdapter` ready → DeepAgents `available: true`.
+- Con `codex` / `gemini` / `pi` → `StubHarnessAdapter` (unsupported) → `adapter-missing`
+  (conservador: nunca finge capacidades). Pendiente: adapters reales (Fase 5).
 
 Esta SDD cubre la implementación completa.
 

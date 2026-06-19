@@ -53,7 +53,7 @@ function fakeDelegate(opts: {
     getCapabilities: vi.fn(async (): Promise<ProviderCapability[]> => [
       { name: "review", operations, synchronous: true },
     ]),
-    execute: executeSpy,
+    execute: executeSpy as ProviderDelegate["execute"],
   };
 }
 
