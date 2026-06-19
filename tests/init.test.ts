@@ -110,6 +110,38 @@ describe("buildManifest — project scope", () => {
       expect(skill, `Expected skill ${skillName} to be in manifest`).toBeDefined();
     }
   });
+
+  test("codex and gemini get the same 6 cybersec skill files as claude", () => {
+    const cwd = os.tmpdir();
+    const home = os.homedir();
+
+    const skillBundles = [
+      "cybersec-audit/SKILL.md",
+      "redteam-attack/SKILL.md",
+      "blueteam-defense/SKILL.md",
+      "threat-modeling/SKILL.md",
+      "purple-loop/SKILL.md",
+      "purple-loop/_pl/SKILL.md",
+    ];
+
+    for (const runtime of ["codex", "gemini"] as const) {
+      const manifest = buildManifest("project", cwd, home, [runtime]);
+      const skillBase = path.join(cwd, `.${runtime}`, "skills");
+      const skillFiles = manifest.filter((e) => e.dest.startsWith(skillBase));
+      expect(
+        skillFiles.length,
+        `${runtime} should scaffold 6 cybersec skill files`
+      ).toBe(6);
+
+      for (const rel of skillBundles) {
+        const dest = path.join(skillBase, ...rel.split("/"));
+        expect(
+          manifest.some((e) => e.dest === dest),
+          `${runtime} missing skill ${rel}`
+        ).toBe(true);
+      }
+    }
+  });
 });
 
 describe("buildManifest — global scope", () => {

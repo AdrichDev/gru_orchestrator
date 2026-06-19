@@ -12,8 +12,8 @@
  *
  * Runtimes:
  *   claude      → .claude/CLAUDE.md + .claude/agents/cybersec/* + .claude/skills/*
- *   codex       → .codex/AGENTS.md (+ root AGENTS.md)
- *   gemini      → .gemini/GEMINI.md
+ *   codex       → .codex/AGENTS.md (+ root AGENTS.md) + .codex/agents/cybersec/* + .codex/skills/*
+ *   gemini      → .gemini/GEMINI.md + .gemini/agents/cybersec/* + .gemini/skills/*
  *   opencode    → .config/opencode/AGENTS.md + opencode.json
  *   cursor      → .cursor/rules/gru.mdc + AGENTS.md
  *   antigravity → AGENTS.md at root (same as codex/cursor, deduped)
@@ -325,6 +325,14 @@ const TEMPLATE_ENTRIES: TemplateEntry[] = [
   { src: ".codex/agents/cybersec/redteam-exploit.toml",        destRelative: ".codex/agents/cybersec/redteam-exploit.toml",        runtime: "codex", projectOnly: true },
   { src: ".codex/agents/cybersec/redteam-recon.toml",          destRelative: ".codex/agents/cybersec/redteam-recon.toml",          runtime: "codex", projectOnly: true },
 
+  // Codex cybersec skills (same 5 bundles as Claude — runtime-agnostic markdown)
+  { src: ".codex/skills/cybersec-audit/SKILL.md",   destRelative: ".codex/skills/cybersec-audit/SKILL.md",   runtime: "codex", projectOnly: true },
+  { src: ".codex/skills/redteam-attack/SKILL.md",   destRelative: ".codex/skills/redteam-attack/SKILL.md",   runtime: "codex", projectOnly: true },
+  { src: ".codex/skills/blueteam-defense/SKILL.md", destRelative: ".codex/skills/blueteam-defense/SKILL.md", runtime: "codex", projectOnly: true },
+  { src: ".codex/skills/threat-modeling/SKILL.md",  destRelative: ".codex/skills/threat-modeling/SKILL.md",  runtime: "codex", projectOnly: true },
+  { src: ".codex/skills/purple-loop/SKILL.md",      destRelative: ".codex/skills/purple-loop/SKILL.md",      runtime: "codex", projectOnly: true },
+  { src: ".codex/skills/purple-loop/_pl/SKILL.md",  destRelative: ".codex/skills/purple-loop/_pl/SKILL.md",  runtime: "codex", projectOnly: true },
+
   // ── Gemini ────────────────────────────────────────────────────────────
   { src: ".gemini/GEMINI.md",  destRelative: ".gemini/GEMINI.md",  runtime: "gemini", projectOnly: true },
 
@@ -337,6 +345,14 @@ const TEMPLATE_ENTRIES: TemplateEntry[] = [
   { src: ".gemini/agents/cybersec/redteam-coordinator.md",    destRelative: ".gemini/agents/cybersec/redteam-coordinator.md",    runtime: "gemini", projectOnly: true },
   { src: ".gemini/agents/cybersec/redteam-exploit.md",        destRelative: ".gemini/agents/cybersec/redteam-exploit.md",        runtime: "gemini", projectOnly: true },
   { src: ".gemini/agents/cybersec/redteam-recon.md",          destRelative: ".gemini/agents/cybersec/redteam-recon.md",          runtime: "gemini", projectOnly: true },
+
+  // Gemini cybersec skills (same 5 bundles as Claude — runtime-agnostic markdown)
+  { src: ".gemini/skills/cybersec-audit/SKILL.md",   destRelative: ".gemini/skills/cybersec-audit/SKILL.md",   runtime: "gemini", projectOnly: true },
+  { src: ".gemini/skills/redteam-attack/SKILL.md",   destRelative: ".gemini/skills/redteam-attack/SKILL.md",   runtime: "gemini", projectOnly: true },
+  { src: ".gemini/skills/blueteam-defense/SKILL.md", destRelative: ".gemini/skills/blueteam-defense/SKILL.md", runtime: "gemini", projectOnly: true },
+  { src: ".gemini/skills/threat-modeling/SKILL.md",  destRelative: ".gemini/skills/threat-modeling/SKILL.md",  runtime: "gemini", projectOnly: true },
+  { src: ".gemini/skills/purple-loop/SKILL.md",      destRelative: ".gemini/skills/purple-loop/SKILL.md",      runtime: "gemini", projectOnly: true },
+  { src: ".gemini/skills/purple-loop/_pl/SKILL.md",  destRelative: ".gemini/skills/purple-loop/_pl/SKILL.md",  runtime: "gemini", projectOnly: true },
 
   // ── OpenCode ──────────────────────────────────────────────────────────
   { src: ".config/opencode/AGENTS.md",    destRelative: ".config/opencode/AGENTS.md",    runtime: "opencode", projectOnly: true },
