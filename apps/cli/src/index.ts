@@ -12,6 +12,8 @@ import { loadConfig } from "../../../packages/kernel/src/orchestrator/config.js"
 import { isOptionalOrDisabled, formatProviderStatus } from "../../../packages/kernel/src/orchestrator/status.js";
 import type { ProviderId } from "../../../packages/shared/src/ports/provider.js";
 import type { SddPhase } from "../../../packages/shared/src/ports/agent.js";
+import type { DelegationProviderId, ContextReference } from "../../../packages/shared/src/ports/delegation.js";
+import { createDelegationOrchestrator } from "../../../packages/kernel/src/delegates/index.js";
 import { runInit, printInitSummary, isValidRuntime, ALL_RUNTIMES } from "./init.js";
 import type { InstallScope, RuntimeId } from "./init.js";
 import { printBanner } from "./banner.js";
@@ -115,6 +117,107 @@ async function askForFallback(error: ProviderUnavailableError, prompt: string, a
   }
 }
 
+async function runDelegate(args: string[]): Promise<void> {
+  // Usage: gru delegate <provider> --operation <op> --task "<text>"
+  //                     [--json] [--context <ref>] [--constraint <c>] [--timeout <ms>]
+  //
+  // <provider> is optional: omit it to auto-resolve the first available provider
+  // that supports <operation>.
+  //
+  // NOTE: this path does NOT run the full risk-classification + Devil's Advocate
+  // + human-approval pipeline from orchestrateTask. It is intended for explicit,
+  // scripted invocations where the caller owns the risk decision.
+
+  const restArgs = args.slice(1); // drop "delegate"
+
+  // The first positional arg (if not a flag) is the optional providerId.
+  let providerId: DelegationProviderId | undefined;
+  const firstArg = restArgs[0];
+  if (firstArg && !firstArg.startsWith("--")) {
+    providerId = firstArg as DelegationProviderId;
+  }
+
+  const operationIdx = restArgs.indexOf("--operation");
+  const taskIdx = restArgs.indexOf("--task");
+  const timeoutIdx = restArgs.indexOf("--timeout");
+  const jsonFlag = restArgs.includes("--json");
+
+  if (operationIdx === -1 || taskIdx === -1) {
+    console.error("Uso: gru delegate [<provider>] --operation <op> --task \"<text>\" [--json] [--context <ref>] [--constraint <c>] [--timeout <ms>]");
+    console.error("  <provider>  — id del provider (ecc|ruflo|gentlePi|…); omitir para auto-resolver");
+    console.error("  --operation — id de operación (consult|review|implement|plan|…)");
+    console.error("  --task      — descripción de la tarea (texto)");
+    console.error("  --context   — referencia de contexto portable (repetible)");
+    console.error("  --constraint — restricción adicional (repetible)");
+    console.error("  --timeout   — timeout en ms (opcional)");
+    console.error("  --json      — output en JSON");
+    process.exitCode = 2;
+    return;
+  }
+
+  const operation = restArgs[operationIdx + 1];
+  const taskPrompt = restArgs[taskIdx + 1];
+  const timeoutMs = timeoutIdx !== -1 ? parseInt(restArgs[timeoutIdx + 1] ?? "0", 10) || undefined : undefined;
+
+  if (!operation || operation.startsWith("--")) {
+    console.error("gru delegate: --operation requires a value.");
+    process.exitCode = 2;
+    return;
+  }
+
+  if (!taskPrompt || taskPrompt.startsWith("--")) {
+    console.error("gru delegate: --task requires a value.");
+    process.exitCode = 2;
+    return;
+  }
+
+  // Collect repeatable --context and --constraint flags
+  const contextRefs: Array<{ kind: ContextReference["kind"]; ref: string }> = [];
+  const constraints: string[] = [];
+  for (let i = 0; i < restArgs.length; i++) {
+    if (restArgs[i] === "--context" && restArgs[i + 1]) {
+      contextRefs.push({ kind: "artifact", ref: restArgs[i + 1] });
+    }
+    if (restArgs[i] === "--constraint" && restArgs[i + 1]) {
+      constraints.push(restArgs[i + 1]);
+    }
+  }
+
+  try {
+    const orchestrator = createDelegationOrchestrator();
+    const result = await orchestrator.delegate({
+      operation,
+      prompt: taskPrompt,
+      providerId,
+      contextRefs,
+      constraints,
+      timeoutMs,
+    });
+
+    if (jsonFlag) {
+      console.log(JSON.stringify(result, null, 2));
+    } else {
+      console.log(`\n[delegate] provider: ${result.providerId}`);
+      console.log(`[delegate] status:   ${result.status}`);
+      if (result.output) console.log(`[delegate] output:\n${result.output}`);
+      if (result.error) console.error(`[delegate] error:    ${result.error}`);
+      if (result.artifacts && result.artifacts.length > 0) {
+        console.log(`[delegate] artifacts: ${result.artifacts.join(", ")}`);
+      }
+      if (result.externalExecutionId) {
+        console.log(`[delegate] externalId: ${result.externalExecutionId}`);
+      }
+    }
+
+    if (result.status !== "COMPLETED" && result.status !== "SUBMITTED" && result.status !== "RUNNING") {
+      process.exitCode = 2;
+    }
+  } catch (err) {
+    console.error("[delegate] Error:", err instanceof Error ? err.message : String(err));
+    process.exitCode = 1;
+  }
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   if (args.length === 0) {
@@ -129,6 +232,10 @@ async function main(): Promise<void> {
     console.log("    default runtime when non-interactive: claude");
     console.log("    --awesome-copilot: download the awesome-copilot skills catalog (~100MB) into ~/.gru/awesome-copilot");
     console.log("    --skills: alias for --awesome-copilot");
+    console.log('  pnpm gru delegate [<provider>] --operation <op> --task "<text>" [--json] [--context <ref>] [--constraint <c>] [--timeout <ms>]');
+    console.log("    <provider>: id del provider (ecc|ruflo|gentlePi|…); omitir para auto-resolver");
+    console.log("    --operation: id de operación soportada por el provider");
+    console.log("    --task:      texto de la tarea a delegar");
     return;
   }
 
@@ -147,6 +254,14 @@ async function main(): Promise<void> {
     return true;
   });
   const commandOrPrompt = filteredArgs.join(" ");
+
+  // ── delegate subcommand — must check raw args (not filteredArgs) ──────────
+  // `gru delegate [<provider>] --operation <op> --task "<text>" ...`
+  // This check uses the original args to preserve all flags for runDelegate().
+  if (args[0] === "delegate" || args[0] === "/delegate") {
+    await runDelegate(args);
+    return;
+  }
 
   if (["status", "/status", "doctor", "/doctor"].includes(commandOrPrompt.toLowerCase())) {
     await runStatus(strict);
