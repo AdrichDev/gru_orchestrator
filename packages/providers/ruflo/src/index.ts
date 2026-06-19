@@ -8,14 +8,14 @@ export class RufloProvider implements GruProvider {
     return /swarm|multiagente|paralelo/i.test(task.prompt);
   }
   async checkAvailability(): Promise<ProviderAvailability> {
-    const probe = await probeCommand("pnpm", ["dlx", "ruflo@latest", "--version"]);
+    const probe = await probeCommand("pnpm", ["dlx", "ruflo@3.11.0", "--version"]);
     return {
       providerId: this.id,
       available: probe.available,
-      executable: "pnpm dlx ruflo@latest",
+      executable: "pnpm dlx ruflo@3.11.0",
       version: probe.version,
       reason: probe.reason,
-      installHint: "Ejecuta: pnpm dlx ruflo@latest init wizard"
+      installHint: "Ejecuta: pnpm dlx ruflo@3.11.0 init wizard"
     };
   }
   async run(task: ProviderTask): Promise<ProviderResult> {
@@ -24,7 +24,7 @@ export class RufloProvider implements GruProvider {
       // The workflow is queued for the Ruflo daemon; output contains the workflow ID and status.
       const result = await execa(
         "pnpm",
-        ["dlx", "ruflo@latest", "workflow", "run", "-t", "development", "--task", task.prompt],
+        ["dlx", "ruflo@3.11.0", "workflow", "run", "-t", "development", "--task", task.prompt],
         { reject: false }
       );
       return {
@@ -33,7 +33,7 @@ export class RufloProvider implements GruProvider {
         output: result.stdout || result.stderr,
         error: result.exitCode === 0 ? undefined : result.stderr,
         exitCode: result.exitCode,
-        executedCommand: `pnpm dlx ruflo@latest workflow run -t development --task ${JSON.stringify(task.prompt)}`
+        executedCommand: `pnpm dlx ruflo@3.11.0 workflow run -t development --task ${JSON.stringify(task.prompt)}`
       };
     } catch (error) {
       return { providerId: this.id, success: false, output: "", error: error instanceof Error ? error.message : String(error) };

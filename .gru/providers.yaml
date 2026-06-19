@@ -3,9 +3,9 @@ providers:
     enabled: true
     kind: swarm-runtime
     command: pnpm
-    args: ["dlx", "ruflo@latest"]
-    healthCheckArgs: ["dlx", "ruflo@latest", "--version"]
-    installHint: "pnpm dlx ruflo@latest init wizard"
+    args: ["dlx", "ruflo@3.11.0"]
+    healthCheckArgs: ["dlx", "ruflo@3.11.0", "--version"]
+    installHint: "pnpm dlx ruflo@3.11.0 init wizard"
 
   gentlePi:
     enabled: true

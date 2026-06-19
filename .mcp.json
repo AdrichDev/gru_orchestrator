@@ -4,7 +4,7 @@
       "command": "pnpm",
       "args": [
         "dlx",
-        "ruflo@latest",
+        "ruflo@3.11.0",
         "mcp",
         "start"
       ],
