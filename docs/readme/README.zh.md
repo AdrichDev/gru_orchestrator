@@ -130,13 +130,13 @@ Red 的突破即为 OPEN 发现；Blue 必须修复**并**添加检测以将其�
 | `paranoid` | 即使中等任务也要求明确批准 |
 
 **硬规则**（破坏性、生产、安全、费用）始终生效，与刚性级别无关。
-→ 详见 [USAGE.md](../../USAGE.md#devils-advocate--niveles-de-rigidez)。
+→ 详见 [USAGE.zh.md](../usage/USAGE.zh.md#devils-advocate--严格度等级)。
 
 ---
 
 ## 📖 文档
 
-* **[USAGE.md](../../USAGE.md)** —— 完整参考：命令、`gru init`、provider、环境变量和故障排查。
+* **[USAGE.zh.md](../usage/USAGE.zh.md)** —— 完整参考：命令、`gru init`、provider、环境变量和故障排查。
 * **[STRICT_PROVIDER_RUNTIME.md](../../STRICT_PROVIDER_RUNTIME.md)** —— 严格的 provider 运行时。
 * **[SDD.md](../../SDD.md)** —— 规范驱动开发：阶段、持久化和 Engram 格式。
 * **[docs/harness-reference.md](../harness-reference.md)** —— provider 目录、人格、工作流和项目接入。

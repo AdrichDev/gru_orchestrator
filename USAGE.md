@@ -1,9 +1,73 @@
+<div align="center">
+
+<img src="docs/assets/gru-banner.svg" alt="GRU Harness — orchestrator" width="640">
+
+</div>
+
+> **"Gru coordinates. Minions produce. Policies govern. Human approves."**
+
+<div align="center">
+
+![Node](https://img.shields.io/badge/node-%3E%3D20-3c873a) ![Runtime](https://img.shields.io/badge/runtime-strict-facc15) ![Niveles](https://img.shields.io/badge/niveles-0--4-64748b) ![Harness](https://img.shields.io/badge/blue%2Fred%2Fpurple-cybersec-8b5cf6)
+
+</div>
+
+---
+
+<div align="center">
+
+🇪🇸 [**Español**](USAGE.md) &nbsp;|&nbsp; 🇺🇸 [**English**](docs/usage/USAGE.en.md) &nbsp;|&nbsp; 🇨🇳 [**中文**](docs/usage/USAGE.zh.md) &nbsp;|&nbsp; 🇫🇷 [**Français**](docs/usage/USAGE.fr.md) &nbsp;|&nbsp; 🇩🇪 [**Deutsch**](docs/usage/USAGE.de.md)
+
+</div>
+
+---
+
 # Gru Harness — Guía de uso (referencia)
 
 Referencia completa del CLI `gru` (paquete `@adrichdev/gru-harness`, repo privado —
 se instala desde Git, no desde el registry público). Para la presentación del proyecto,
 ver [README.md](README.md). Para el runtime estricto de providers, ver
 [STRICT_PROVIDER_RUNTIME.md](STRICT_PROVIDER_RUNTIME.md).
+
+---
+
+## ¿Dónde se ejecuta el harness y qué hay que copiar?
+
+Hay **dos formas** de usar Gru, y la respuesta depende de cuál uses. No las mezcles.
+
+### A) El CLI `gru` (standalone)
+
+- Se instala **una sola vez, global** (`pnpm add -g github:AdrichDev/gru_orchestrator`).
+  Expone el comando `gru` en todo el sistema.
+- **No** hay que estar dentro de la carpeta de gru_orchestrator. Ese repo es solo para
+  *desarrollar* el harness. Para *usarlo*, ejecutas `gru` desde la **raíz de TU proyecto**
+  (el que estás trabajando).
+- El `cwd` define: scope de config (`<cwd>/.gru/`), destino del filesystem scan y los logs
+  (`runs/run_*.json`). Por eso se corre en la raíz de tu proyecto, no en la de gru.
+- **¿Copiar canónicos?** Para que el CLI *arranque*, no: el `postinstall` siembra
+  `~/.gru/*` y eso basta. Solo necesitas `gru init` en tu proyecto si quieres config
+  project-scoped, contratos o `.mcp.json` locales.
+
+### B) La persona dentro de un harness LLM (Claude Code, Codex, Gemini, Cursor…)
+
+- Estas herramientas auto-cargan su archivo canónico **desde el árbol del `cwd`**:
+  Claude Code lee `CLAUDE.md`; Codex/Cursor/Antigravity leen `AGENTS.md`; Gemini lee
+  `GEMINI.md`.
+- **Aquí SÍ hay que tener los canónicos en la raíz de TU proyecto.** Los archivos del repo
+  de gru **NO bastan**: solo se cargan cuando trabajas *dentro de* `gru_orchestrator`. Otro
+  proyecto no lee el `CLAUDE.md`/`AGENTS.md` de un repo ajeno.
+- Para sembrarlos en tu proyecto: `gru init --runtime <tool>` (ver
+  [`gru init`](#gru-init--referencia-completa)). Escribe el canónico del runtime elegido +
+  los compartidos (`.gru/*`, contratos, `.mcp.json`).
+
+### Resumen
+
+| Pregunta | Respuesta |
+| :--- | :--- |
+| ¿Estar dentro de la carpeta de gru? | **No.** Solo para desarrollar el harness. Para usarlo, corre desde la raíz de tu proyecto. |
+| ¿Dónde corro `gru`? | En la **raíz del proyecto que trabajas** (el `cwd` define config/scan/logs). |
+| ¿Bastan los archivos del repo de gru? | **CLI:** sí (global + `~/.gru/`). **Persona LLM:** no — cada tool solo lee el canónico del árbol de su `cwd`. |
+| ¿Hay que copiar canónicos a la raíz del proyecto? | **Solo para la persona LLM.** Usa `gru init --runtime <tool>`. El CLI no lo necesita para arrancar. |
 
 ---
 

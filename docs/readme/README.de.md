@@ -135,13 +135,13 @@ Eine Veto-Persona, die jede Entscheidung hinterfragt. Die Strenge ist in
 | `paranoid` | verlangt ausdrückliche Freigabe auch bei mittleren Aufgaben |
 
 Die **harten Regeln** (destruktiv, Produktion, Sicherheit, Kosten) sind unabhängig von der
-Strenge-Stufe immer aktiv. → Details in [USAGE.md](../../USAGE.md#devils-advocate--niveles-de-rigidez).
+Strenge-Stufe immer aktiv. → Details in [USAGE.de.md](../usage/USAGE.de.md#devils-advocate--strenge-stufen).
 
 ---
 
 ## 📖 Dokumentation
 
-* **[USAGE.md](../../USAGE.md)** — vollständige Referenz: Befehle, `gru init`, Provider, Umgebungsvariablen und Fehlerbehebung.
+* **[USAGE.de.md](../usage/USAGE.de.md)** — vollständige Referenz: Befehle, `gru init`, Provider, Umgebungsvariablen und Fehlerbehebung.
 * **[STRICT_PROVIDER_RUNTIME.md](../../STRICT_PROVIDER_RUNTIME.md)** — die strikte Provider-Laufzeit.
 * **[SDD.md](../../SDD.md)** — Spec-Driven Development: Phasen, Persistenz und Engram-Format.
 * **[docs/harness-reference.md](../harness-reference.md)** — Provider-Katalog, Personas, Workflows und Project Intake.

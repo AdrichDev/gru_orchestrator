@@ -133,13 +133,13 @@ A veto persona that challenges every decision. Rigidity is configurable in
 | `paranoid` | requires explicit approval even on medium tasks |
 
 The **hard rules** (destructive, production, security, cost) are always active, regardless
-of the rigidity level. → details in [USAGE.md](../../USAGE.md#devils-advocate--niveles-de-rigidez).
+of the rigidity level. → details in [USAGE.en.md](../usage/USAGE.en.md#devils-advocate--rigidity-levels).
 
 ---
 
 ## 📖 Documentation
 
-* **[USAGE.md](../../USAGE.md)** — full reference: commands, `gru init`, providers, environment variables, and troubleshooting.
+* **[USAGE.en.md](../usage/USAGE.en.md)** — full reference: commands, `gru init`, providers, environment variables, and troubleshooting.
 * **[STRICT_PROVIDER_RUNTIME.md](../../STRICT_PROVIDER_RUNTIME.md)** — the strict provider runtime.
 * **[SDD.md](../../SDD.md)** — Spec-Driven Development: phases, persistence, and Engram format.
 * **[docs/harness-reference.md](../harness-reference.md)** — providers catalog, personas, workflows, and project intake.
