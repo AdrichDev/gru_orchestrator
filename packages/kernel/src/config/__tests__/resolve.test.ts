@@ -16,8 +16,11 @@ describe("resolveGruRoot", () => {
     originalEnv = { ...process.env };
     originalCwd = process.cwd();
 
-    // Create a fresh temp dir for this test
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gru-resolve-test-"));
+    // Create a fresh temp dir for this test, UNDER HOME so it passes the SEC-03
+    // override guard (GRU_CONFIG_DIR/GRU_RUNS_DIR must resolve under home or cwd).
+    // os.tmpdir() sits under home on Windows but is /tmp on Linux (outside home) →
+    // the guard would reject it there and the env-wins branches fail in CI.
+    tmpDir = fs.mkdtempSync(path.join(os.homedir(), ".gru-resolve-test-"));
   });
 
   afterEach(() => {
