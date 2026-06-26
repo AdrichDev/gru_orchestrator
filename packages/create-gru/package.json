@@ -1,16 +1,34 @@
 {
   "name": "create-gru",
   "version": "0.1.0",
-  "description": "Instalador del harness Gru (modo B) en cualquier proyecto. Cero dependencias.",
+  "description": "Instalador del harness Gru (modo B) en cualquier proyecto. Cero dependencias. Para uso propio, no comercial.",
   "type": "module",
   "license": "ISC",
+  "keywords": [
+    "gru",
+    "harness",
+    "orchestrator",
+    "claude-code",
+    "scaffold",
+    "init"
+  ],
+  "homepage": "https://github.com/AdrichDev/gru_orchestrator/tree/main/packages/create-gru#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AdrichDev/gru_orchestrator.git",
+    "directory": "packages/create-gru"
+  },
+  "bugs": {
+    "url": "https://github.com/AdrichDev/gru_orchestrator/issues"
+  },
   "bin": {
     "create-gru": "index.mjs",
     "gru-init": "index.mjs"
   },
   "files": [
     "index.mjs",
-    "template"
+    "template",
+    "README.md"
   ],
   "scripts": {
     "build:template": "node ../../scripts/build-installer-template.mjs",
