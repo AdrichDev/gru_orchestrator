@@ -1,0 +1,19 @@
+{
+  "name": "create-gru",
+  "version": "0.1.0",
+  "description": "Instalador del harness Gru (modo B) en cualquier proyecto. Cero dependencias.",
+  "type": "module",
+  "license": "ISC",
+  "bin": {
+    "create-gru": "index.mjs",
+    "gru-init": "index.mjs"
+  },
+  "files": [
+    "index.mjs",
+    "template"
+  ],
+  "scripts": {
+    "build:template": "node ../../scripts/build-installer-template.mjs",
+    "prepublishOnly": "node ../../scripts/build-installer-template.mjs"
+  }
+}

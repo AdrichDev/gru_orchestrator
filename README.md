@@ -158,9 +158,38 @@ La suite de guardrails verifica que el orquestador no se sale de las líneas: pr
 
 ## 📦 Usar el harness en TU proyecto
 
-Gru se integra en cualquier proyecto copiando los archivos de instrucciones del harness que uses:
+### Opción rápida: instalador `create-gru` (recomendado)
 
-### 1. Copia los archivos del harness
+El paquete **`create-gru`** ([`packages/create-gru`](packages/create-gru)) instala el harness en cualquier proyecto con un comando. Es **cero dependencias**: no clona el monorepo, no instala `workspace:*` ni binarios nativos, no corre `postinstall`. Copia desde un `template/` curado (solo minions Gru-nativos; sin el bloat de claude-flow).
+
+Una vez publicado en npm:
+
+```bash
+pnpm dlx create-gru init               # interactivo (pregunta), dir actual
+pnpm dlx create-gru init ./mi-proyecto # destino explícito
+pnpm dlx create-gru init --yes         # sin preguntar: perfil recomendado
+pnpm dlx create-gru init --minimal     # solo CLAUDE.md + minion-contract.md
+pnpm dlx create-gru init --force       # sobrescribe (copia por archivo, hace merge)
+pnpm dlx create-gru init --dry-run     # muestra qué haría, sin escribir
+```
+
+Desde el propio repo, sin publicar:
+
+```bash
+node packages/create-gru/index.mjs init /ruta/a/tu-proyecto
+```
+
+En terminal interactiva **pregunta grupo por grupo** qué instalar (contratos, `.mcp.json`, `agents/`, `output-styles/`). Enter = valor por defecto. `CLAUDE.md` y `minion-contract.md` siempre se copian. La copia es **por archivo**: si tu proyecto ya tiene un `.claude/agents` propio, se respetan tus archivos y se añaden los que falten (no salta el directorio entero). Sin TTY (CI) usa el perfil recomendado, no se cuelga.
+
+> El instalador deja `ENGRAM_BIN` como `engram` (PATH) y el MCP de engram en modo `lazy` (no intenta arrancar si engram no está instalado). Ajústalo en `.mcp.json` si tu binario está en otra ruta. Nunca copia `settings.local.json`.
+
+**Publicación** (mantenedores): el `template/` se regenera desde el repo con `node scripts/build-installer-template.mjs` (también en `prepublishOnly`). Para activar el `pnpm dlx create-gru`, publica el paquete con `npm publish` desde `packages/create-gru`.
+
+### Opción manual: copiar archivos
+
+Si prefieres control total (o usas Codex/Gemini/Qwen), copia los archivos del harness que uses:
+
+#### 1. Copia los archivos del harness
 
 | Tu entorno | Archivo a copiar a tu proyecto |
 | :--- | :--- |
@@ -171,7 +200,7 @@ Gru se integra en cualquier proyecto copiando los archivos de instrucciones del 
 | Cualquiera (contrato de subagentes) | `minion-contract.md` → **raíz del proyecto** (obligatorio: todo sub-agente debe leerlo antes de trabajar) |
 | Protocolo SDD + memoria Engram | `SDD.md` |
 
-### 2. Copia la configuración MCP (opcional pero recomendado)
+#### 2. Copia la configuración MCP (opcional pero recomendado)
 
 `.mcp.json` registra los servidores MCP de **claude-flow/ruflo**, **context7** y **engram**. Ajusta `ENGRAM_BIN` a tu ruta local.
 
