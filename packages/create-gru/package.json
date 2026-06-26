@@ -1,0 +1,31 @@
+{
+  "name": "create-gru",
+  "version": "0.2.0",
+  "description": "Lanzador npx del harness Gru: instala el CLI nativo y ejecuta `gru init`. Para uso propio, no comercial.",
+  "type": "module",
+  "license": "ISC",
+  "keywords": [
+    "gru",
+    "harness",
+    "orchestrator",
+    "claude-code",
+    "init",
+    "bootstrapper"
+  ],
+  "homepage": "https://github.com/AdrichDev/gru_orchestrator/tree/main/packages/create-gru#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AdrichDev/gru_orchestrator.git",
+    "directory": "packages/create-gru"
+  },
+  "bugs": {
+    "url": "https://github.com/AdrichDev/gru_orchestrator/issues"
+  },
+  "bin": {
+    "create-gru": "index.mjs"
+  },
+  "files": [
+    "index.mjs",
+    "README.md"
+  ]
+}

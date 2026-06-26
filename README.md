@@ -72,6 +72,20 @@ gru status                  # estado real de cada provider
 gru "<prompt>"              # orquesta una tarea: clasifica → enruta → ejecuta
 ```
 
+¿Prefieres no instalar nada global a mano? El atajo npx hace exactamente lo de
+arriba (instala el harness y lanza `gru init`):
+
+```bash
+cd tu-proyecto
+pnpm dlx create-gru                 # = pnpm add -g github:… && gru init
+pnpm dlx create-gru init --runtime all --scope project
+```
+
+Hay **una sola vía de instalación** real: el CLI nativo `gru init`. `create-gru`
+([`packages/create-gru`](packages/create-gru)) es solo la entrada cómoda por npm
+que delega en él — no copia ni mantiene archivos propios, así que nunca se
+desincroniza del harness.
+
 El `postinstall` prepara `~/.gru/` con la config por defecto. El catálogo awesome-copilot
 es **opt-in** (`gru init --awesome-copilot`), no se descarga solo.
 
