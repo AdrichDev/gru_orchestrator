@@ -144,9 +144,8 @@ export class GruIntakeAdapter {
       return;
     }
 
-    // Two-shot model: ack now, final result later. Gru emits no intermediate
-    // progress events, so there is no streaming between these two messages.
-    await this.sender.send(from, `🤖 Gru recibió la directiva para ${project.name}. Procesando...`);
+    // No ack message: only the final result is sent. Progress is traced to
+    // Engram, not the chat.
     this.trace(project.path, { type: "directive_received", from, prompt, project: project.name });
 
     await this.queue.enqueue(() =>
