@@ -77,13 +77,46 @@ classification so `orchestrateTask` throws `HumanApprovalRequiredError`. The
 (or `SÍ` + `CONFIRMO` for the send) before any mail leaves. No new approval code
 in the gateway.
 
-## What is needed to implement Phase 2 (open questions for the user)
+## Decisions locked (user answers)
 
-1. Does 3A_Estudio already have an HTTP API, or must one be added? Which stack?
-2. Where does email actually send from today (SMTP / provider / inside 3A)?
-3. Confirm Option B over A (keep business logic in 3A, Gru only orchestrates).
-4. Approval to add a `business` delegate to Gru core (routing + delegate file).
+- **Q3 — Option B confirmed**: business logic stays in 3A_Estudio. Gru only
+  orchestrates and calls 3A over HTTP.
+- **Stack**: 3A_Estudio is **Node / TypeScript**.
+- **Q4 — approved**: a `business` delegate may be added to Gru core
+  (`packages/kernel/src/delegates/` + a routing rule).
+- **Q2 — open / "no sé"**: email-sending location unknown.
+- **Q1 — open / "no sé"**: unknown whether 3A already exposes an HTTP API.
 
-Until 1–4 are answered, Phase 2 stays design — no code is written against
-assumptions about 3A_Estudio's internals.
+## The Gru ↔ 3A contract (fixed regardless of whether the API exists yet)
+
+Gru's `business` delegate will speak this contract. If 3A already has endpoints,
+we map onto them; if not, 3A must add these (Node/TS):
+
+```
+Auth:  Authorization: Bearer <THREEA_API_TOKEN>   (service token, Gru-side only)
+Base:  THREEA_API_BASE_URL
+
+POST /api/budgets               { client }                 -> { budgetId, total, pdfUrl }
+POST /api/budgets/:id/validate                              -> { status }            # reversible
+POST /api/budgets/:id/send-email { to }                     -> { sent: true }        # OUTBOUND → risk gate
+```
+
+Delegate env (Gru side): `THREEA_API_BASE_URL`, `THREEA_API_TOKEN`.
+
+Risk: the `send-email` step is outbound → it must raise the kernel risk
+classification so `orchestrateTask` throws `HumanApprovalRequiredError`. The
+existing chat approval flow (`SÍ` / `SÍ`+`CONFIRMO`) then gates the send with NO
+new gateway code.
+
+## Single remaining blocker before implementation
+
+To write the delegate against real endpoints (not assumptions), I need to see
+3A_Estudio:
+
+- Its repo path (or confirm whether it has an HTTP API today), and
+- if email sends from inside 3A or a separate provider/SMTP.
+
+3A_Estudio is **not in this workspace**, so it cannot be inspected from here.
+Provide the path / API details and the `business` delegate can be built against
+the contract above. Until then, no code is written against assumed internals.
 ```
