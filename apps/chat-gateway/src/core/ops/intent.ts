@@ -23,14 +23,21 @@ export interface IntentParserOptions {
 const SYSTEM = `Eres un PARSER. Conviertes el mensaje del usuario en UN objeto JSON valido y NADA mas (sin markdown, sin texto, sin explicacion).
 
 Esquema de salida:
-{"entity":"customer|booking|invoice|sale|unknown","operation":"create|query","params":{...}}
+{"entity":"customer|booking|invoice|sale|crm|tenant|unknown","operation":"create|query|list","params":{...}}
 
 Campos por comando (NO inventes campos que el usuario no haya dado):
-- customer.create: { "nombre": string, "telefono"?: string, "email"?: string }
-- customer.query:  { "nombre"?: string }
-- booking.create:  { "clienteNombre": string, "servicioNombre": string, "inicio": string, "notas"?: string }
-- invoice.create:  { "cliente": string, "servicio": string, "total": number }   // NUNCA incluyas "numero"
-- sale.create:     { "cliente"?: string, "total": number }
+- customer.create: { "nombre": string, "telefono"?: string, "email"?: string, "negocio"?: string }
+- customer.query:  { "nombre"?: string, "negocio"?: string }
+- booking.create:  { "clienteNombre": string, "servicioNombre": string, "inicio": string, "notas"?: string, "negocio"?: string }
+- invoice.create:  { "cliente": string, "servicio": string, "total": number, "negocio"?: string }   // NUNCA incluyas "numero"
+- sale.create:     { "cliente"?: string, "total": number, "negocio"?: string }
+- crm.create:      { "tenant": string, "nombre": string, "vertical"?: string }   // crear un CRM/negocio nuevo enlazado a un tenant
+- crm.list:        { "tenant"?: string }                                          // listar CRMs/negocios
+- tenant.list:     {}                                                             // listar tenants de agents-agency
+
+Conceptos:
+- "negocio"/"CRM" = un Business de creador_CRM. "tenant" = cliente de agents-agency al que se enlaza un CRM.
+- "negocio" en comandos de datos = sobre que CRM se opera (ej: "en JorjotasBarber, da de alta...").
 
 Reglas:
 - Si no encaja en ningun comando, devuelve {"entity":"unknown"}.

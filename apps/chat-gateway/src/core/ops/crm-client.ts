@@ -33,15 +33,18 @@ export class CrmClient {
     businessId: string,
     body?: unknown,
   ): Promise<T> {
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${this.cfg.serviceToken}`,
+      "Content-Type": "application/json",
+    };
+    // Omit x-business-id for cross-business routes (empty businessId).
+    if (businessId) headers["x-business-id"] = businessId;
+
     let res: Response;
     try {
       res = await fetch(`${this.cfg.baseUrl}${path}`, {
         method,
-        headers: {
-          Authorization: `Bearer ${this.cfg.serviceToken}`,
-          "x-business-id": businessId,
-          "Content-Type": "application/json",
-        },
+        headers,
         body: body !== undefined ? JSON.stringify(body) : undefined,
       });
     } catch (err) {
@@ -109,5 +112,34 @@ export class CrmClient {
     businessId: string,
   ): Promise<Array<{ id: string; cliente?: string; total: number; createdAt?: string }>> {
     return this.request("GET", "/sales", businessId);
+  }
+
+  // ── CRM-level (cross-business) ops — service mode needs NO x-business-id ──
+  // The empty businessId means the request omits the x-business-id header, which
+  // is allowed for /projects and /tenants in service mode.
+
+  /** List all CRMs (Business). Optionally filter by tenantId (query). */
+  listProjects(
+    tenantId?: string,
+  ): Promise<Array<{ id: string; business: { nombre: string; vertical: string } }>> {
+    const q = tenantId ? `?tenantId=${encodeURIComponent(tenantId)}` : "";
+    return this.request("GET", `/projects${q}`, "");
+  }
+
+  /** List active agents-agency tenants (to link when creating a CRM). */
+  listTenants(): Promise<Array<{ id: string; nombre: string }>> {
+    return this.request("GET", "/tenants", "");
+  }
+
+  /** Create a CRM (Business) linked to an existing tenant. */
+  createProject(input: {
+    tenantId: string;
+    nombre: string;
+    vertical?: string;
+  }): Promise<{ id: string }> {
+    return this.request("POST", "/projects", "", {
+      tenantId: input.tenantId,
+      config: { business: { name: input.nombre, vertical: input.vertical ?? "custom" } },
+    });
   }
 }
