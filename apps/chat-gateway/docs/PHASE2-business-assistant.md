@@ -108,15 +108,56 @@ classification so `orchestrateTask` throws `HumanApprovalRequiredError`. The
 existing chat approval flow (`SÍ` / `SÍ`+`CONFIRMO`) then gates the send with NO
 new gateway code.
 
-## Single remaining blocker before implementation
+## Reality check — 3A_Estudio inspected (supersedes the contract above)
 
-To write the delegate against real endpoints (not assumptions), I need to see
-3A_Estudio:
+Real path: `D:/Adrian/22. Proyectos/3A_Estudio`. The relevant sub-project is
+**`agents-agency`** (Express + Prisma + OpenAI, back on :4000, all routes under
+`/api`, auth = **Supabase Bearer token**, gate loads `aa.User`).
 
-- Its repo path (or confirm whether it has an HTTP API today), and
-- if email sends from inside 3A or a separate provider/SMTP.
+What it ALREADY has (verified):
 
-3A_Estudio is **not in this workspace**, so it cannot be inspected from here.
-Provide the path / API details and the `business` delegate can be built against
-the contract above. Until then, no code is written against assumed internals.
+- `/api/clients` — full CRUD.
+- `/api/budgets` — GET list / GET :id / POST create (`budgetCreateSchema`) /
+  PUT :id (status update → "validate").
+- `/api/ai/chat` — runs the **agent loop** (OpenAI function-calling) with tools.
+- Email is **NOT a REST endpoint**. It is the agent tool `send_email` →
+  `lib/integrations/gmail.ts sendEmail(token, to, subject, body)`, using a
+  per-tenant **Gmail OAuth** token (`withToken("gmail", …)`).
+- Its **own WhatsApp + Telegram channels** (`/api/channels/:provider/connect`,
+  `telegram-webhook`, `whatsapp-webhook`).
+
+### Consequence (the earlier discrete-endpoint contract is wrong)
+
+- `POST /api/budgets/:id/send-email` **does not exist**; email only flows through
+  the agent loop + Gmail OAuth.
+- The "nuevo cliente → presupuesto → validar → mail" assistant is **already
+  natively supported** by agents-agency — including its own chat channels. A Gru
+  `business` delegate that re-orchestrates discrete calls would duplicate the
+  agent loop and still hit the missing email endpoint.
+
+### Revised options (decision needed before any code)
+
+1. **Don't build it (recommended).** The business assistant lives in
+   agents-agency, which already does it end-to-end with its own WhatsApp/Telegram.
+   Gru's chat-gateway stays focused on dev/engineering orchestration. No overlap.
+2. **Thin pass-through delegate.** Gru `business` op → single `POST /api/ai/chat`
+   on agents-agency with the NL instruction; its agent does clients+budgets+email.
+   Lets ONE Gru/chat-gateway entry also reach business actions. Needs: agents-agency
+   base url, a Supabase **service token**, and a target agent id. Risk gate still
+   applies (outbound mail → `SÍ`/`CONFIRMO`).
+3. **Discrete-endpoint orchestration in Gru (NOT recommended).** Gru calls
+   `/clients` + `/budgets` directly and 3A must add a REST `send-email` endpoint.
+   Most work, duplicates the agent loop.
+
+### DECISION (chosen)
+
+**Option 1 — do NOT build the delegate.** The business assistant lives in
+agents-agency, which already does it end-to-end (clients, budgets, Gmail
+`send_email`, and its own WhatsApp/Telegram channels). Gru's `chat-gateway`
+stays focused on dev/engineering orchestration across repos. No `business`
+delegate is added to Gru core; Phase 2 is closed as **won't-build** to avoid
+duplicating an existing system.
+
+If a single unified chat entry is ever wanted later, revisit Option 2 (thin
+pass-through to `/api/ai/chat`).
 ```
