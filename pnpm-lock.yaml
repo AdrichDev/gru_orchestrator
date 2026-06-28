@@ -58,7 +58,7 @@ importers:
         specifier: ^4.1.8
         version: 4.1.8(@types/node@25.9.2)(vite@8.0.16(@types/node@25.9.2)(esbuild@0.27.7)(tsx@4.22.4)(yaml@2.9.0))
 
-  apps/whatsapp-gateway:
+  apps/chat-gateway:
     dependencies:
       '@kapso/whatsapp-cloud-api':
         specifier: latest

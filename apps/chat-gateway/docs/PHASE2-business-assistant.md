@@ -12,7 +12,7 @@ Business actions like *generate a budget*, *validate it*, *send it by email* are
 **capabilities**, not channel concerns. Per Gru's own rule ("la lógica vive en
 Gru"), the WhatsApp layer must never send emails or render PDFs directly.
 
-So Phase 2 is **not** new code in `apps/whatsapp-gateway`. It is a new
+So Phase 2 is **not** new code in `apps/chat-gateway`. It is a new
 **capability** reachable through Gru. The gateway stays unchanged — it already
 relays any natural-language directive.
 

@@ -1,4 +1,4 @@
-# @gru/whatsapp-gateway — Gru chat gateway
+# @gru/chat-gateway — Gru chat gateway
 
 Thin **chat → Gru** gateway. Send a message on **WhatsApp** or **Telegram**, Gru
 routes / classifies risk / escalates / executes, and the result comes back to
@@ -76,7 +76,7 @@ pnpm install
 ### 2. Configure
 
 ```bash
-cd apps/whatsapp-gateway
+cd apps/chat-gateway
 cp env.example .env
 cp projects.example.json projects.json
 ```
