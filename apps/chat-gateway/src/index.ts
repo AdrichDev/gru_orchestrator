@@ -5,6 +5,7 @@ import { SessionStore } from "./core/sessions.js";
 import { SingleFlightQueue } from "./core/queue.js";
 import { GruIntakeAdapter, type OrchestrateFn } from "./core/intake.js";
 import { createClaudeRunner } from "./core/claude-runner.js";
+import { createOpsRunner } from "./core/ops-runner.js";
 import { WhatsAppSender } from "./channels/whatsapp/sender.js";
 import { createWhatsAppServer } from "./channels/whatsapp/server.js";
 import { TelegramSender } from "./channels/telegram/sender.js";
@@ -27,19 +28,34 @@ function main(): void {
   //    and runs within the user's Claude plan — no third-party "extra usage".
   //  - "kernel": the standalone kernel orchestrateTask (routes to third-party
   //    provider CLIs). Opt in with GRU_ENGINE=kernel.
+  //  - "ops-crm": business-operations engine — parses NL into structured CRM
+  //    commands. Slice 1 is DRY-RUN (no writes). Opt in with GRU_ENGINE=ops-crm.
   const engine = (process.env.GRU_ENGINE ?? "claude-cli").toLowerCase();
-  const orchestrate: OrchestrateFn =
+  let orchestrate: OrchestrateFn;
+  if (engine === "kernel") {
+    orchestrate = (prompt, provider, options) =>
+      orchestrateTask(prompt, provider as Parameters<typeof orchestrateTask>[1], options);
+  } else if (engine === "ops-crm") {
+    orchestrate = createOpsRunner({
+      parser: { bin: process.env.CLAUDE_BIN, model: process.env.CLAUDE_MODEL },
+    });
+  } else {
+    orchestrate = createClaudeRunner({
+      bin: process.env.CLAUDE_BIN,
+      permissionMode: process.env.CLAUDE_PERMISSION_MODE,
+      model: process.env.CLAUDE_MODEL,
+    });
+  }
+
+  const engineLabel =
     engine === "kernel"
-      ? (prompt, provider, options) =>
-          orchestrateTask(prompt, provider as Parameters<typeof orchestrateTask>[1], options)
-      : createClaudeRunner({
-          bin: process.env.CLAUDE_BIN,
-          permissionMode: process.env.CLAUDE_PERMISSION_MODE,
-          model: process.env.CLAUDE_MODEL,
-        });
+      ? "kernel (orchestrateTask)"
+      : engine === "ops-crm"
+        ? "ops-crm (business ops, DRY-RUN)"
+        : "claude-cli (headless)";
 
   console.log(`\nGru chat gateway — channels: ${env.channels.join(", ")}`);
-  console.log(`Engine:          ${engine === "kernel" ? "kernel (orchestrateTask)" : "claude-cli (headless)"}`);
+  console.log(`Engine:          ${engineLabel}`);
   console.log(`Projects:        ${projects.list().map((p) => p.name).join(", ")}`);
   console.log(`Default project: ${env.defaultProject ?? "(none — use /proyecto)"}`);
 
