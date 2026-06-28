@@ -38,6 +38,11 @@ function main(): void {
   } else if (engine === "ops-crm") {
     orchestrate = createOpsRunner({
       parser: { bin: process.env.CLAUDE_BIN, model: process.env.CLAUDE_MODEL },
+      crm: {
+        baseUrl: process.env.CRM_BASE_URL,
+        serviceToken: process.env.CRM_SERVICE_TOKEN,
+        defaultBusinessId: process.env.DEFAULT_BUSINESS_ID,
+      },
     });
   } else {
     orchestrate = createClaudeRunner({
