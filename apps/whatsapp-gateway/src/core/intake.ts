@@ -1,15 +1,11 @@
 import type { GatewayEnv } from "./env.js";
 import type { ProjectRegistry } from "./projects.js";
 import type { SessionStore } from "./sessions.js";
-import { SingleFlightQueue, withCwd } from "./queue.js";
-import type { WhatsAppSender } from "./whatsapp.js";
+import { type SingleFlightQueue, withCwd } from "./queue.js";
 import { traceChannelEvent } from "./engram-log.js";
+import type { ChannelId, ChannelSender, InboundMessage } from "./channel.js";
 
-export interface InboundMessage {
-  from: string; // digits only
-  text: string;
-  id: string;
-}
+export type { InboundMessage } from "./channel.js";
 
 interface ActiveProject {
   name: string;
@@ -45,21 +41,24 @@ interface MessageErrorShape {
 const DESTRUCTIVE_HINT = /irreversible|destructiv/i;
 
 /**
- * WhatsApp -> Gru intake adapter.
+ * Chat -> Gru intake adapter (channel-agnostic).
  *
- * Responsibility is deliberately thin: normalize a chat message into a Gru
- * directive, hand it to `orchestrate`, and translate Gru's typed outcomes back
- * into chat replies. ALL routing, risk classification and escalation stay inside
- * Gru — this class never decides any of that.
+ * One instance per channel, each wired with its own sender and sessions but
+ * sharing ONE SingleFlightQueue across all channels — orchestrateTask switches
+ * the process CWD per project, so WhatsApp and Telegram tasks must never run
+ * concurrently. Responsibility is deliberately thin: normalize a chat message
+ * into a Gru directive, hand it to `orchestrate`, and translate Gru's typed
+ * outcomes back into chat replies. ALL routing, risk classification and
+ * escalation stay inside Gru — this class never decides any of that.
  */
 export class GruIntakeAdapter {
-  private readonly queue = new SingleFlightQueue();
-
   constructor(
+    private readonly channel: ChannelId,
     private readonly env: GatewayEnv,
     private readonly projects: ProjectRegistry,
     private readonly sessions: SessionStore,
-    private readonly wa: WhatsAppSender,
+    private readonly sender: ChannelSender,
+    private readonly queue: SingleFlightQueue,
     private readonly orchestrate: OrchestrateFn,
   ) {}
 
@@ -91,12 +90,12 @@ export class GruIntakeAdapter {
       case "/proyecto": {
         const name = rest.join(" ").trim();
         if (!name) {
-          await this.wa.send(from, "Uso: /proyecto <NOMBRE>");
+          await this.sender.send(from, "Uso: /proyecto <NOMBRE>");
           return;
         }
         const entry = this.projects.get(name);
         if (!entry) {
-          await this.wa.send(
+          await this.sender.send(
             from,
             `Proyecto desconocido: ${name}\nDisponibles: ${this.projects
               .list()
@@ -106,17 +105,17 @@ export class GruIntakeAdapter {
           return;
         }
         session.activeProject = entry.name;
-        await this.wa.send(from, `✅ Proyecto activo: ${entry.name}\n${entry.path}`);
+        await this.sender.send(from, `✅ Proyecto activo: ${entry.name}\n${entry.path}`);
         return;
       }
       case "/proyectos":
-        await this.wa.send(
+        await this.sender.send(
           from,
           "Proyectos:\n" + this.projects.list().map((p) => `• ${p.name}`).join("\n"),
         );
         return;
       case "/activo":
-        await this.wa.send(
+        await this.sender.send(
           from,
           session.activeProject
             ? `Proyecto activo: ${session.activeProject}`
@@ -125,7 +124,7 @@ export class GruIntakeAdapter {
         return;
       case "/ayuda":
       default:
-        await this.wa.send(from, HELP_TEXT);
+        await this.sender.send(from, HELP_TEXT);
         return;
     }
   }
@@ -141,21 +140,21 @@ export class GruIntakeAdapter {
   private async runDirective(from: string, prompt: string): Promise<void> {
     const project = this.resolveProject(from);
     if (!project) {
-      await this.wa.send(from, "No hay proyecto activo. Usa /proyecto <NOMBRE> primero.");
+      await this.sender.send(from, "No hay proyecto activo. Usa /proyecto <NOMBRE> primero.");
       return;
     }
 
     // Two-shot model: ack now, final result later. Gru emits no intermediate
     // progress events, so there is no streaming between these two messages.
-    await this.wa.send(from, `🤖 Gru recibió la directiva para ${project.name}. Procesando...`);
-    traceChannelEvent(project.path, { type: "directive_received", from, prompt, project: project.name });
+    await this.sender.send(from, `🤖 Gru recibió la directiva para ${project.name}. Procesando...`);
+    this.trace(project.path, { type: "directive_received", from, prompt, project: project.name });
 
     await this.queue.enqueue(() =>
       withCwd(project.path, async () => {
         try {
           const output = await this.orchestrate(prompt, this.env.gruDefaultProvider);
-          traceChannelEvent(project.path, { type: "directive_done", from, project: project.name });
-          await this.wa.send(from, `✅ ${project.name} — completado:\n\n${output}`);
+          this.trace(project.path, { type: "directive_done", from, project: project.name });
+          await this.sender.send(from, `✅ ${project.name} — completado:\n\n${output}`);
         } catch (err) {
           await this.handleOrchestrationError(from, project, prompt, err);
         }
@@ -171,41 +170,41 @@ export class GruIntakeAdapter {
 
     if (saidNo) {
       session.pending = undefined;
-      await this.wa.send(from, "Cancelado. No se ejecutó nada.");
-      traceChannelEvent(pending.projectPath, { type: "approval_cancelled", from });
+      await this.sender.send(from, "Cancelado. No se ejecutó nada.");
+      this.trace(pending.projectPath, { type: "approval_cancelled", from });
       return;
     }
     if (!saidYes) {
-      await this.wa.send(from, "Responde *SÍ* para continuar o *NO* para cancelar.");
+      await this.sender.send(from, "Responde *SÍ* para continuar o *NO* para cancelar.");
       return;
     }
 
     // Double-confirm gate for destructive/irreversible tasks.
     if (pending.stage === "double" && !pending.confirmedOnce) {
       pending.confirmedOnce = true;
-      await this.wa.send(
+      await this.sender.send(
         from,
         "Confirmación 1/2 recibida. Esta acción es IRREVERSIBLE.\nResponde *CONFIRMO* para ejecutar definitivamente.",
       );
       return;
     }
     if (pending.stage === "double" && pending.confirmedOnce && !/^confirmo$/i.test(text)) {
-      await this.wa.send(from, "Para acciones destructivas, escribe *CONFIRMO* exactamente.");
+      await this.sender.send(from, "Para acciones destructivas, escribe *CONFIRMO* exactamente.");
       return;
     }
 
     // Approved → re-run with explicit human approval.
     const { prompt, projectName, projectPath } = pending;
     session.pending = undefined;
-    await this.wa.send(from, `▶️ Ejecutando en ${projectName} (aprobado)...`);
-    traceChannelEvent(projectPath, { type: "approval_granted", from, project: projectName });
+    await this.sender.send(from, `▶️ Ejecutando en ${projectName} (aprobado)...`);
+    this.trace(projectPath, { type: "approval_granted", from, project: projectName });
 
     await this.queue.enqueue(() =>
       withCwd(projectPath, async () => {
         try {
           const output = await this.orchestrate(prompt, this.env.gruDefaultProvider, { approved: true });
-          traceChannelEvent(projectPath, { type: "approved_done", from, project: projectName });
-          await this.wa.send(from, `✅ ${projectName} — completado:\n\n${output}`);
+          this.trace(projectPath, { type: "approved_done", from, project: projectName });
+          await this.sender.send(from, `✅ ${projectName} — completado:\n\n${output}`);
         } catch (err) {
           await this.handleOrchestrationError(from, { name: projectName, path: projectPath }, prompt, err);
         }
@@ -222,7 +221,7 @@ export class GruIntakeAdapter {
     const name = (err as { name?: string })?.name;
 
     // Risk gate: Gru blocked execution pending human approval. Map to the
-    // "responde SÍ" WhatsApp confirmation flow (double-confirm if destructive).
+    // "responde SÍ" confirmation flow (double-confirm if destructive).
     if (name === "HumanApprovalRequiredError") {
       const e = err as ApprovalErrorShape;
       const reasons = e.reasons ?? [];
@@ -240,11 +239,11 @@ export class GruIntakeAdapter {
       const ask = destructive
         ? "Esta tarea es DESTRUCTIVA/IRREVERSIBLE. Responde *SÍ* para continuar (pediré una segunda confirmación)."
         : "Responde *SÍ* para ejecutar, o *NO* para cancelar.";
-      await this.wa.send(
+      await this.sender.send(
         from,
         `⚠️ Riesgo nivel ${e.classification.level} — ${e.classification.levelName}.\nMotivos: ${reasons.join("; ")}\n\n${ask}`,
       );
-      traceChannelEvent(project.path, {
+      this.trace(project.path, {
         type: "approval_requested",
         from,
         reasons,
@@ -256,7 +255,7 @@ export class GruIntakeAdapter {
     // No silent fallback: forward Gru's exact error to the user (per the spec).
     if (name === "ProviderUnavailableError") {
       const e = err as MessageErrorShape;
-      await this.wa.send(
+      await this.sender.send(
         from,
         `🚫 Provider no disponible: ${e.message}${e.installHint ? `\nSolución: ${e.installHint}` : ""}`,
       );
@@ -264,17 +263,21 @@ export class GruIntakeAdapter {
     }
     if (name === "DelegationBlockedError") {
       const e = err as MessageErrorShape;
-      await this.wa.send(from, `🛑 Bloqueado por Devil's Advocate: ${e.message}`);
+      await this.sender.send(from, `🛑 Bloqueado por Devil's Advocate: ${e.message}`);
       return;
     }
 
     const message = err instanceof Error ? err.message : String(err);
-    traceChannelEvent(project.path, { type: "directive_error", from, error: message });
-    await this.wa.send(from, `❌ Error de Gru:\n${message}`);
+    this.trace(project.path, { type: "directive_error", from, error: message });
+    await this.sender.send(from, `❌ Error de Gru:\n${message}`);
+  }
+
+  private trace(projectPath: string, event: Record<string, unknown>): void {
+    traceChannelEvent(this.channel, projectPath, event);
   }
 }
 
-const HELP_TEXT = `Gru WhatsApp — comandos:
+const HELP_TEXT = `Gru — comandos:
 /proyecto <NOMBRE> — fija el proyecto activo
 /proyectos — lista proyectos
 /activo — muestra proyecto activo

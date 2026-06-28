@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Thin WhatsApp (Kapso) channel adapter that injects messages into the Gru orchestrator intake. WhatsApp is only an I/O channel; all routing, risk and escalation stay in Gru.",
+  "description": "Thin chat gateway (WhatsApp via Kapso + Telegram) that injects messages into the Gru orchestrator intake. Chat is only an I/O channel; all routing, risk and escalation stay in Gru.",
   "main": "src/index.ts",
   "scripts": {
     "start": "tsx src/index.ts",

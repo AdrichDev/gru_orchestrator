@@ -4,21 +4,22 @@ import os from "node:os";
 import path from "node:path";
 import { GruIntakeAdapter, type OrchestrateFn, type InboundMessage } from "../intake.js";
 import { SessionStore } from "../sessions.js";
+import { SingleFlightQueue } from "../queue.js";
 import type { GatewayEnv } from "../env.js";
 import type { ProjectRegistry, ProjectEntry } from "../projects.js";
-import type { WhatsAppSender } from "../whatsapp.js";
+import type { ChannelSender } from "../channel.js";
 
 const FROM = "34600111222";
 
 let projectDir: string;
 let sent: string[];
 
-function fakeSender(): WhatsAppSender {
+function fakeSender(): ChannelSender {
   return {
     send: async (_to: string, body: string) => {
       sent.push(body);
     },
-  } as unknown as WhatsAppSender;
+  };
 }
 
 function fakeProjects(): ProjectRegistry {
@@ -42,7 +43,15 @@ function approvalError(reasons: string[], level = 3, levelName = "Large") {
 }
 
 function build(orchestrate: OrchestrateFn) {
-  return new GruIntakeAdapter(fakeEnv(), fakeProjects(), new SessionStore(), fakeSender(), orchestrate);
+  return new GruIntakeAdapter(
+    "whatsapp",
+    fakeEnv(),
+    fakeProjects(),
+    new SessionStore(),
+    fakeSender(),
+    new SingleFlightQueue(),
+    orchestrate,
+  );
 }
 
 function msg(text: string): InboundMessage {

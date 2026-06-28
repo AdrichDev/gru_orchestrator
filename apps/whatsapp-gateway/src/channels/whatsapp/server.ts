@@ -1,8 +1,9 @@
 import express, { type Request, type Response } from "express";
 import { normalizeWebhook } from "@kapso/whatsapp-cloud-api/server";
-import { normalizePhone, type GatewayEnv } from "./env.js";
+import { normalizePhone, type WhatsAppChannelEnv } from "../../core/env.js";
 import { verifyKapsoSignature, isWhitelisted } from "./security.js";
-import type { GruIntakeAdapter, InboundMessage } from "./intake.js";
+import type { GruIntakeAdapter } from "../../core/intake.js";
+import type { InboundMessage } from "../../core/channel.js";
 
 // The exact normalized message type lives in the Kapso SDK; we read it
 // defensively (only the documented fields: id, from, text.body, type, kapso).
@@ -14,7 +15,7 @@ interface NormalizedMessage {
   kapso?: { direction?: "inbound" | "outbound" };
 }
 
-export function createServer(env: GatewayEnv, adapter: GruIntakeAdapter) {
+export function createWhatsAppServer(env: WhatsAppChannelEnv, adapter: GruIntakeAdapter) {
   const app = express();
 
   // Raw body is REQUIRED for HMAC signature verification — register it only on
@@ -28,7 +29,7 @@ export function createServer(env: GatewayEnv, adapter: GruIntakeAdapter) {
     const signature = req.header("X-Webhook-Signature");
 
     if (!verifyKapsoSignature(raw, signature, env.webhookSecret)) {
-      console.warn("[webhook] invalid signature — rejected");
+      console.warn("[whatsapp] invalid signature — rejected");
       res.status(401).json({ error: "invalid signature" });
       return;
     }
@@ -40,7 +41,7 @@ export function createServer(env: GatewayEnv, adapter: GruIntakeAdapter) {
     try {
       payload = JSON.parse(raw.toString("utf-8"));
     } catch {
-      console.warn("[webhook] body is not valid JSON");
+      console.warn("[whatsapp] body is not valid JSON");
       return;
     }
 
@@ -49,7 +50,7 @@ export function createServer(env: GatewayEnv, adapter: GruIntakeAdapter) {
       const events = normalizeWebhook(payload) as { messages?: NormalizedMessage[] };
       messages = events.messages ?? [];
     } catch (err) {
-      console.warn("[webhook] normalize failed:", err instanceof Error ? err.message : String(err));
+      console.warn("[whatsapp] normalize failed:", err instanceof Error ? err.message : String(err));
       return;
     }
 
@@ -63,14 +64,12 @@ export function createServer(env: GatewayEnv, adapter: GruIntakeAdapter) {
       if (!from || !text) continue;
 
       if (!isWhitelisted(from, env.adminNumbers)) {
-        console.warn(`[webhook] ignored non-whitelisted sender: ${from}`);
+        console.warn(`[whatsapp] ignored non-whitelisted sender: ${from}`);
         continue;
       }
 
       const inbound: InboundMessage = { from, text, id };
-      adapter
-        .handle(inbound)
-        .catch((err) => console.error("[adapter] handle error:", err));
+      adapter.handle(inbound).catch((err) => console.error("[whatsapp] handle error:", err));
     }
   });
 

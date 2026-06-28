@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fragment } from "../whatsapp.js";
+import { fragment } from "../fragment.js";
 
 describe("fragment", () => {
   it("returns a single chunk when under the limit", () => {
