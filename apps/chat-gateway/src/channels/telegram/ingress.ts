@@ -99,7 +99,6 @@ export class TelegramIngress {
       const fileId = msg.voice?.file_id ?? msg.audio?.file_id;
       if (fileId) {
         try {
-          await this.sender.send(chat, "🎙️ Transcribiendo audio...");
           text = await transcribeVoice(this.env.botToken, fileId);
         } catch (err) {
           console.error("[telegram] transcription error:", err);
