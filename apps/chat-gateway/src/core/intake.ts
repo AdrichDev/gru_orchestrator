@@ -156,7 +156,7 @@ export class GruIntakeAdapter {
             this.orchestrate(prompt, this.env.gruDefaultProvider),
           );
           this.trace(project.path, { type: "directive_done", from, project: project.name });
-          await this.sender.send(from, `✅ ${project.name} — completado:\n\n${output}`);
+          await this.sender.send(from, output);
         } catch (err) {
           await this.handleOrchestrationError(from, project, prompt, err);
         }
@@ -208,7 +208,7 @@ export class GruIntakeAdapter {
             this.orchestrate(prompt, this.env.gruDefaultProvider, { approved: true }),
           );
           this.trace(projectPath, { type: "approved_done", from, project: projectName });
-          await this.sender.send(from, `✅ ${projectName} — completado:\n\n${output}`);
+          await this.sender.send(from, output);
         } catch (err) {
           await this.handleOrchestrationError(from, { name: projectName, path: projectPath }, prompt, err);
         }

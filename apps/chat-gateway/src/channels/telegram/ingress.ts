@@ -110,7 +110,6 @@ export class TelegramIngress {
           await this.sender.send(chat, "❌ Audio vacío o no reconocido.");
           return;
         }
-        await this.sender.send(chat, `📝 Entendí: "${text}"`);
       }
     }
 

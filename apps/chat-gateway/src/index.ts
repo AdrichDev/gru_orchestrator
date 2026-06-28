@@ -4,6 +4,7 @@ import { ProjectRegistry } from "./core/projects.js";
 import { SessionStore } from "./core/sessions.js";
 import { SingleFlightQueue } from "./core/queue.js";
 import { GruIntakeAdapter, type OrchestrateFn } from "./core/intake.js";
+import { createClaudeRunner } from "./core/claude-runner.js";
 import { WhatsAppSender } from "./channels/whatsapp/sender.js";
 import { createWhatsAppServer } from "./channels/whatsapp/server.js";
 import { TelegramSender } from "./channels/telegram/sender.js";
@@ -11,18 +12,34 @@ import { TelegramIngress } from "./channels/telegram/ingress.js";
 
 function main(): void {
   const env = loadEnv();
-  const projects = new ProjectRegistry(env.projectsFile);
+  const projects = new ProjectRegistry({
+    projectsFile: env.projectsFile,
+    roots: env.projectRoots,
+  });
 
   // ONE queue shared across every channel. orchestrateTask switches the process
   // CWD per project, so tasks from different channels must never run concurrently.
   const queue = new SingleFlightQueue();
 
-  // Composition root: inject the real kernel intake. forcedProvider is the
-  // kernel's ProviderId union.
-  const orchestrate: OrchestrateFn = (prompt, provider, options) =>
-    orchestrateTask(prompt, provider as Parameters<typeof orchestrateTask>[1], options);
+  // Composition root: pick the execution engine.
+  //  - "claude-cli" (default): run each directive through the first-party
+  //    `claude` CLI (headless), which loads the project's CLAUDE.md (Gru persona)
+  //    and runs within the user's Claude plan — no third-party "extra usage".
+  //  - "kernel": the standalone kernel orchestrateTask (routes to third-party
+  //    provider CLIs). Opt in with GRU_ENGINE=kernel.
+  const engine = (process.env.GRU_ENGINE ?? "claude-cli").toLowerCase();
+  const orchestrate: OrchestrateFn =
+    engine === "kernel"
+      ? (prompt, provider, options) =>
+          orchestrateTask(prompt, provider as Parameters<typeof orchestrateTask>[1], options)
+      : createClaudeRunner({
+          bin: process.env.CLAUDE_BIN,
+          permissionMode: process.env.CLAUDE_PERMISSION_MODE,
+          model: process.env.CLAUDE_MODEL,
+        });
 
   console.log(`\nGru chat gateway — channels: ${env.channels.join(", ")}`);
+  console.log(`Engine:          ${engine === "kernel" ? "kernel (orchestrateTask)" : "claude-cli (headless)"}`);
   console.log(`Projects:        ${projects.list().map((p) => p.name).join(", ")}`);
   console.log(`Default project: ${env.defaultProject ?? "(none — use /proyecto)"}`);
 

@@ -25,6 +25,8 @@ export interface GatewayEnv {
   channels: ChannelId[];
   // Shared, channel-agnostic config consumed by the intake core.
   projectsFile: string;
+  /** Roots scanned for git repos at startup (auto-discovery). Empty = disabled. */
+  projectRoots: string[];
   defaultProject: string | undefined;
   gruDefaultProvider: string | undefined;
   /** After this many ms a still-running task triggers a "still working" notice. 0 = off. */
@@ -111,6 +113,7 @@ export function loadEnv(): GatewayEnv {
   return {
     channels,
     projectsFile: path.resolve(optional("PROJECTS_FILE", "./projects.json")),
+    projectRoots: parseList(optional("PROJECT_ROOTS", "")).map((p) => path.resolve(p)),
     defaultProject: process.env.DEFAULT_PROJECT?.trim() || undefined,
     gruDefaultProvider: process.env.GRU_DEFAULT_PROVIDER?.trim() || undefined,
     taskTimeoutMs,
