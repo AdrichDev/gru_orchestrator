@@ -48,16 +48,17 @@ function main(): void {
 
   if (env.telegram) {
     const tg = env.telegram;
+    const tgSender = new TelegramSender(tg.botToken);
     const adapter = new GruIntakeAdapter(
       "telegram",
       env,
       projects,
       new SessionStore(),
-      new TelegramSender(tg.botToken),
+      tgSender,
       queue,
       orchestrate,
     );
-    new TelegramIngress(tg, adapter).start();
+    new TelegramIngress(tg, adapter, tgSender).start();
     console.log(`\n[telegram] long-polling started (no tunnel needed)`);
     console.log(`[telegram] whitelist user ids: ${tg.adminIds.join(", ")}`);
   }

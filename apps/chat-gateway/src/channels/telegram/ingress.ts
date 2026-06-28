@@ -1,6 +1,8 @@
 import type { GruIntakeAdapter } from "../../core/intake.js";
 import type { TelegramChannelEnv } from "../../core/env.js";
+import type { ChannelSender } from "../../core/channel.js";
 import { isTelegramAdmin } from "./security.js";
+import { transcribeVoice } from "./voice.js";
 
 const API_BASE = "https://api.telegram.org";
 
@@ -11,6 +13,8 @@ interface TgUpdate {
     from?: { id: number };
     chat?: { id: number };
     text?: string;
+    voice?: { file_id?: string };
+    audio?: { file_id?: string };
   };
 }
 
@@ -26,6 +30,9 @@ export class TelegramIngress {
   constructor(
     private readonly env: TelegramChannelEnv,
     private readonly adapter: GruIntakeAdapter,
+    // Sender is used only for voice-transcription status messages; the adapter
+    // owns all other replies. Keeps the adapter text-only and channel-agnostic.
+    private readonly sender: ChannelSender,
   ) {}
 
   start(): void {
@@ -47,10 +54,13 @@ export class TelegramIngress {
           // Fire-and-forget so a long-running task never blocks polling of new
           // messages (e.g. the "SÍ" approval reply). Offset advances before
           // dispatch completes — deliberate AT-MOST-ONCE semantics: a failed
-          // dispatch is logged (see dispatch) and NOT retried, because
-          // re-delivering a directive could double-execute it. At-most-once is
-          // the safe choice for an orchestration channel.
-          void this.dispatch(u);
+          // dispatch is logged here and NOT retried, because re-delivering a
+          // directive could double-execute it. At-most-once is the safe choice
+          // for an orchestration channel. The .catch also absorbs any failure
+          // from the status/error sends inside dispatch (no unhandled rejection).
+          this.dispatch(u).catch((err) =>
+            console.error("[telegram] dispatch error:", err instanceof Error ? err.message : String(err)),
+          );
         }
       } catch (err) {
         console.warn("[telegram] poll error:", err instanceof Error ? err.message : String(err));
@@ -71,18 +81,44 @@ export class TelegramIngress {
 
   private async dispatch(u: TgUpdate): Promise<void> {
     const msg = u.message;
-    const text = msg?.text;
     const userId = msg?.from?.id;
     const chatId = msg?.chat?.id;
-    if (!msg || !text || userId === undefined || chatId === undefined) return;
+    if (!msg || userId === undefined || chatId === undefined) return;
 
+    // Whitelist on the message author, BEFORE any download/transcription work.
     if (!isTelegramAdmin(String(userId), this.env.adminIds)) {
       console.warn(`[telegram] ignored non-whitelisted user: ${userId}`);
       return;
     }
 
+    const chat = String(chatId);
+    let text = msg.text;
+
+    // Voice / audio → transcribe locally to text, then treat as a directive.
+    if (!text) {
+      const fileId = msg.voice?.file_id ?? msg.audio?.file_id;
+      if (fileId) {
+        try {
+          await this.sender.send(chat, "🎙️ Transcribiendo audio...");
+          text = await transcribeVoice(this.env.botToken, fileId);
+        } catch (err) {
+          console.error("[telegram] transcription error:", err);
+          await this.sender.send(chat, "❌ No pude transcribir el audio.");
+          return;
+        }
+        if (!text) {
+          await this.sender.send(chat, "❌ Audio vacío o no reconocido.");
+          return;
+        }
+        await this.sender.send(chat, `📝 Entendí: "${text}"`);
+      }
+    }
+
+    // Non-text, non-voice (sticker, photo, …) is ignored in v1.
+    if (!text) return;
+
     try {
-      await this.adapter.handle({ from: String(chatId), text, id: String(msg.message_id) });
+      await this.adapter.handle({ from: chat, text, id: String(msg.message_id) });
     } catch (err) {
       console.error("[telegram] handle error:", err);
     }

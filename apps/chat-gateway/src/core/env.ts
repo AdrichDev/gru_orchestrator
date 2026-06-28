@@ -27,6 +27,8 @@ export interface GatewayEnv {
   projectsFile: string;
   defaultProject: string | undefined;
   gruDefaultProvider: string | undefined;
+  /** After this many ms a still-running task triggers a "still working" notice. 0 = off. */
+  taskTimeoutMs: number;
   // Per-channel config, present only when that channel is enabled.
   whatsapp?: WhatsAppChannelEnv;
   telegram?: TelegramChannelEnv;
@@ -103,11 +105,15 @@ export function loadEnv(): GatewayEnv {
     throw new Error("CHANNELS must enable at least one channel (whatsapp, telegram).");
   }
 
+  const timeoutMin = Number.parseInt(optional("GRU_TASK_TIMEOUT_MIN", "5"), 10);
+  const taskTimeoutMs = (Number.isNaN(timeoutMin) ? 5 : Math.max(0, timeoutMin)) * 60_000;
+
   return {
     channels,
     projectsFile: path.resolve(optional("PROJECTS_FILE", "./projects.json")),
     defaultProject: process.env.DEFAULT_PROJECT?.trim() || undefined,
     gruDefaultProvider: process.env.GRU_DEFAULT_PROVIDER?.trim() || undefined,
+    taskTimeoutMs,
     whatsapp: channels.includes("whatsapp") ? loadWhatsApp() : undefined,
     telegram: channels.includes("telegram") ? loadTelegram() : undefined,
   };
