@@ -42,6 +42,9 @@ function main(): void {
         baseUrl: process.env.CRM_BASE_URL,
         serviceToken: process.env.CRM_SERVICE_TOKEN,
         defaultBusinessId: process.env.DEFAULT_BUSINESS_ID,
+        duplicateWindowMin: process.env.DUPLICATE_WINDOW_MINUTES
+          ? Number(process.env.DUPLICATE_WINDOW_MINUTES)
+          : undefined,
       },
     });
   } else {

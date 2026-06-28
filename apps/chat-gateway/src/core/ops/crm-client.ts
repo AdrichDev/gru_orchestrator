@@ -86,4 +86,28 @@ export class CrmClient {
   listCustomers(businessId: string): Promise<Array<{ id: string; nombre: string; telefono?: string }>> {
     return this.request("GET", "/customers", businessId);
   }
+
+  // numero is server-assigned — never sent by the bot.
+  createInvoice(
+    businessId: string,
+    input: { cliente: string; servicio: string; total: number },
+  ): Promise<{ id: string; numero: string }> {
+    return this.request("POST", "/invoices", businessId, input);
+  }
+
+  listInvoices(
+    businessId: string,
+  ): Promise<Array<{ id: string; cliente: string; total: number; createdAt?: string }>> {
+    return this.request("GET", "/invoices", businessId);
+  }
+
+  createSale(businessId: string, input: { cliente: string; total: number }): Promise<{ id: string }> {
+    return this.request("POST", "/sales", businessId, input);
+  }
+
+  listSales(
+    businessId: string,
+  ): Promise<Array<{ id: string; cliente?: string; total: number; createdAt?: string }>> {
+    return this.request("GET", "/sales", businessId);
+  }
 }
