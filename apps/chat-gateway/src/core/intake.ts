@@ -152,7 +152,9 @@ export class GruIntakeAdapter {
     await this.queue.enqueue(() =>
       withCwd(project.path, async () => {
         try {
-          const output = await this.orchestrate(prompt, this.env.gruDefaultProvider);
+          const output = await this.runWatched(from, () =>
+            this.orchestrate(prompt, this.env.gruDefaultProvider),
+          );
           this.trace(project.path, { type: "directive_done", from, project: project.name });
           await this.sender.send(from, `✅ ${project.name} — completado:\n\n${output}`);
         } catch (err) {
@@ -202,7 +204,9 @@ export class GruIntakeAdapter {
     await this.queue.enqueue(() =>
       withCwd(projectPath, async () => {
         try {
-          const output = await this.orchestrate(prompt, this.env.gruDefaultProvider, { approved: true });
+          const output = await this.runWatched(from, () =>
+            this.orchestrate(prompt, this.env.gruDefaultProvider, { approved: true }),
+          );
           this.trace(projectPath, { type: "approved_done", from, project: projectName });
           await this.sender.send(from, `✅ ${projectName} — completado:\n\n${output}`);
         } catch (err) {
@@ -270,6 +274,32 @@ export class GruIntakeAdapter {
     const message = err instanceof Error ? err.message : String(err);
     this.trace(project.path, { type: "directive_error", from, error: message });
     await this.sender.send(from, `❌ Error de Gru:\n${message}`);
+  }
+
+  /**
+   * Run a task while watching the clock. If it exceeds `taskTimeoutMs`, send a
+   * one-shot "still working" notice — but keep awaiting the real result. We do
+   * NOT abort: the underlying provider isn't cancellable from here and the shared
+   * CWD must stay correct until the task truly settles. The notice just prevents
+   * a silent infinite wait.
+   */
+  private async runWatched(from: string, fn: () => Promise<string>): Promise<string> {
+    const ms = this.env.taskTimeoutMs;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (ms > 0) {
+      timer = setTimeout(() => {
+        const min = Math.round(ms / 60_000);
+        this.sender
+          .send(from, `⏱️ La tarea lleva más de ${min} min. Sigo esperando a Gru; te aviso al terminar.`)
+          .catch((err) => console.error("[intake] timeout-notice send failed:", err));
+      }, ms);
+      if (typeof timer.unref === "function") timer.unref();
+    }
+    try {
+      return await fn();
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
   }
 
   private trace(projectPath: string, event: Record<string, unknown>): void {
