@@ -68,11 +68,56 @@ afterEach(() => {
 });
 
 describe("GruIntakeAdapter — directive happy path", () => {
-  it("acks then sends the result", async () => {
+  it("sends only the result (no ack chatter)", async () => {
     const adapter = build(async () => "RESULTADO");
     await adapter.handle(msg("haz algo"));
-    expect(sent[0]).toContain("recibió la directiva");
     expect(sent[sent.length - 1]).toContain("RESULTADO");
+    // Quiet replies: no "directive received" ack is sent to the chat.
+    expect(sent.some((m) => m.includes("recibió la directiva"))).toBe(false);
+  });
+});
+
+describe("GruIntakeAdapter — confirm before run", () => {
+  function buildConfirm(orchestrate: OrchestrateFn) {
+    const env = { defaultProject: "TEST", gruDefaultProvider: undefined, confirmBeforeRun: true } as unknown as GatewayEnv;
+    return new GruIntakeAdapter(
+      "whatsapp",
+      env,
+      fakeProjects(),
+      new SessionStore(),
+      fakeSender(),
+      new SingleFlightQueue(),
+      orchestrate,
+    );
+  }
+
+  it("asks for SÍ before running, then runs once confirmed", async () => {
+    let calls = 0;
+    const adapter = buildConfirm(async () => {
+      calls++;
+      return "EJECUTADO";
+    });
+
+    await adapter.handle(msg("haz algo"));
+    expect(calls).toBe(0); // gated — nothing runs yet
+    expect(sent.some((m) => m.includes("Vas a ejecutar"))).toBe(true);
+
+    await adapter.handle(msg("SÍ"));
+    expect(calls).toBe(1);
+    expect(sent[sent.length - 1]).toContain("EJECUTADO");
+  });
+
+  it("does not run when the user replies NO", async () => {
+    let calls = 0;
+    const adapter = buildConfirm(async () => {
+      calls++;
+      return "EJECUTADO";
+    });
+
+    await adapter.handle(msg("haz algo"));
+    await adapter.handle(msg("NO"));
+    expect(calls).toBe(0);
+    expect(sent[sent.length - 1]).toContain("Cancelado");
   });
 });
 

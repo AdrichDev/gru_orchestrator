@@ -144,6 +144,28 @@ export class GruIntakeAdapter {
       return;
     }
 
+    // Confirm-before-run: don't execute until the user replies SÍ. This is the
+    // gateway's own safety gate — it does not depend on Gru's risk router, so it
+    // also guards the Claude Code executor (which has no built-in approval step).
+    if (this.env.confirmBeforeRun) {
+      this.sessions.get(from).pending = {
+        prompt,
+        reasons: ["confirmación antes de ejecutar"],
+        level: 0,
+        levelName: "Confirmación",
+        stage: "single",
+        confirmedOnce: false,
+        projectName: project.name,
+        projectPath: project.path,
+      };
+      await this.sender.send(
+        from,
+        `🔎 Vas a ejecutar en *${project.name}*:\n«${prompt}»\n\nResponde *SÍ* para ejecutar, *NO* para cancelar.`,
+      );
+      this.trace(project.path, { type: "confirm_requested", from, prompt, project: project.name });
+      return;
+    }
+
     // No ack message: only the final result is sent. Progress is traced to
     // Engram, not the chat.
     this.trace(project.path, { type: "directive_received", from, prompt, project: project.name });

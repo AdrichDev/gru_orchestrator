@@ -31,6 +31,8 @@ export interface GatewayEnv {
   gruDefaultProvider: string | undefined;
   /** After this many ms a still-running task triggers a "still working" notice. 0 = off. */
   taskTimeoutMs: number;
+  /** If true, every directive must be confirmed (SÍ) before it runs. Default true. */
+  confirmBeforeRun: boolean;
   // Per-channel config, present only when that channel is enabled.
   whatsapp?: WhatsAppChannelEnv;
   telegram?: TelegramChannelEnv;
@@ -110,6 +112,8 @@ export function loadEnv(): GatewayEnv {
   const timeoutMin = Number.parseInt(optional("GRU_TASK_TIMEOUT_MIN", "5"), 10);
   const taskTimeoutMs = (Number.isNaN(timeoutMin) ? 5 : Math.max(0, timeoutMin)) * 60_000;
 
+  const confirmBeforeRun = optional("CONFIRM_BEFORE_RUN", "true").toLowerCase() !== "false";
+
   return {
     channels,
     projectsFile: path.resolve(optional("PROJECTS_FILE", "./projects.json")),
@@ -117,6 +121,7 @@ export function loadEnv(): GatewayEnv {
     defaultProject: process.env.DEFAULT_PROJECT?.trim() || undefined,
     gruDefaultProvider: process.env.GRU_DEFAULT_PROVIDER?.trim() || undefined,
     taskTimeoutMs,
+    confirmBeforeRun,
     whatsapp: channels.includes("whatsapp") ? loadWhatsApp() : undefined,
     telegram: channels.includes("telegram") ? loadTelegram() : undefined,
   };
