@@ -13,9 +13,12 @@ import { TelegramIngress } from "./channels/telegram/ingress.js";
 
 function main(): void {
   const env = loadEnv();
+  const engine = (process.env.GRU_ENGINE ?? "claude-cli").toLowerCase();
+  const opsMode = engine === "ops-crm";
   const projects = new ProjectRegistry({
     projectsFile: env.projectsFile,
     roots: env.projectRoots,
+    allowEmpty: opsMode, // ops bot targets businesses, not repos
   });
 
   // ONE queue shared across every channel. orchestrateTask switches the process
@@ -29,8 +32,7 @@ function main(): void {
   //  - "kernel": the standalone kernel orchestrateTask (routes to third-party
   //    provider CLIs). Opt in with GRU_ENGINE=kernel.
   //  - "ops-crm": business-operations engine — parses NL into structured CRM
-  //    commands. Slice 1 is DRY-RUN (no writes). Opt in with GRU_ENGINE=ops-crm.
-  const engine = (process.env.GRU_ENGINE ?? "claude-cli").toLowerCase();
+  //    commands and executes them against creador_CRM. Opt in with GRU_ENGINE=ops-crm.
   let orchestrate: OrchestrateFn;
   if (engine === "kernel") {
     orchestrate = (prompt, provider, options) =>
@@ -77,6 +79,7 @@ function main(): void {
       new WhatsAppSender(wa),
       queue,
       orchestrate,
+      opsMode,
     );
     const app = createWhatsAppServer(wa, adapter);
     app.listen(wa.port, () => {

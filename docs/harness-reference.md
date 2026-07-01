@@ -85,6 +85,17 @@ live in `harness/GRU.md#minion-contract`.
 Rule: Do not activate a Minion because it exists. Activate it only because the decision
 table requires it.
 
+**architect + ADR**: when `architect` records an architectural decision (same signal that
+triggers `six-hats-review`), generate an ADR using the template at
+`vendor/awesome-copilot/skills/create-architectural-decision-record/SKILL.md` (referenced
+by path, not copied). Save it to `docs/adr/<date>-<slug>.md` and link it from the Engram
+`architecture:[module]` entry.
+
+**reviewer + quality-playbook**: for changes touching 4+ files, invoke
+`vendor/awesome-copilot/skills/quality-playbook/SKILL.md` (referenced by path, Apache-2.0)
+as an additional multi-pass review before closing L3/L4 changes. Not used below 4 files —
+it is heavy (2700+ lines), reserved for changes where the extra rigor pays off.
+
 ---
 
 ## Workflows by Level — Full Sequences {#workflow-sequences}
@@ -119,7 +130,13 @@ local provider (filesystem scan)
 ### Level 3 — Large
 ```text
 local provider (filesystem scan)
+→ [if "Requires new architecture" or 2+ viable alternatives: six-hats-review skill]
 → gentlePi provider (SDD: specs, tasks, and design)
+→ 3c: spec self-check (spec author re-reads spec against Filesystem Scan findings and
+       the original problem — coverage gaps, missing scenarios, scope creep)
+→ 3d: devil re-check (fresh sub-agent re-reads the WRITTEN spec — not the idea — for
+       unjustified alternatives, unlisted risks, "how" disguised as "what"; blocking
+       finding → back to spec)
 → devilsAdvocate persona (deep risk assessment)
 → local or ruflo provider (for distributed code implementation)
 → pnpm test (run unit/integration tests)
@@ -130,7 +147,10 @@ local provider (filesystem scan)
 ### Level 4 — Critical
 ```text
 local provider (filesystem scan)
+→ [if "Requires new architecture" or 2+ viable alternatives: six-hats-review skill]
 → gentlePi provider (complete SDD)
+→ 3c: spec self-check
+→ 3d: devil re-check (fresh sub-agent; blocking finding → back to spec)
 → devilsAdvocate persona (mandatory audit)
 → ruflo provider (multi-agent coordination in CONSULT/DELEGATE mode)
 → explicit human approval
