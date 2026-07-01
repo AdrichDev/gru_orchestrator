@@ -60,6 +60,8 @@ export class GruIntakeAdapter {
     private readonly sender: ChannelSender,
     private readonly queue: SingleFlightQueue,
     private readonly orchestrate: OrchestrateFn,
+    /** ops mode (GRU_ENGINE=ops-crm): no project needed; target comes from the order. */
+    private readonly opsMode: boolean = false,
   ) {}
 
   async handle(msg: InboundMessage): Promise<void> {
@@ -130,6 +132,9 @@ export class GruIntakeAdapter {
   }
 
   private resolveProject(from: string): ActiveProject | undefined {
+    // Ops mode targets a business per-order (resolved inside the engine), so no
+    // project/cwd is needed; use a synthetic one (the engine ignores cwd).
+    if (this.opsMode) return { name: "ops", path: process.cwd() };
     const session = this.sessions.get(from);
     const name = session.activeProject ?? this.env.defaultProject;
     if (!name) return undefined;

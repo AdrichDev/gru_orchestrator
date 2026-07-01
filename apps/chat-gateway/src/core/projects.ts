@@ -13,6 +13,8 @@ export interface ProjectRegistryOptions {
   roots?: string[];
   /** Max directory depth to descend from each root. Default 3. */
   maxDepth?: number;
+  /** Allow zero projects (e.g. ops-crm bot, which targets businesses, not repos). */
+  allowEmpty?: boolean;
 }
 
 // Dirs never worth scanning into — keeps startup fast and avoids junk repos.
@@ -46,7 +48,7 @@ export class ProjectRegistry {
       this.loadFile(opts.projectsFile, (opts.roots ?? []).length === 0);
     }
 
-    if (this.projects.size === 0) {
+    if (this.projects.size === 0 && !opts.allowEmpty) {
       throw new Error(
         "No projects found. Set PROJECT_ROOTS to scan for repos, or provide a projects.json.",
       );
