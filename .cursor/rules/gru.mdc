@@ -364,6 +364,7 @@ reversible changes.
 ## SDD
 
 > Full SDD workflow, phase sequence, and Engram entry format: → see SDD.md
+> How to persist memory in Engram (save protocol) AND how to create specs in OpenSpec (artifact store): → see SDD.md
 
 ### Light (Level 2)
 ```text
@@ -374,6 +375,12 @@ Explore → Mini-spec → Apply → Verify
 ```text
 /sdd-init → Exploration → Proposal → Spec → Design → Tasks → Apply → Verify → Archive
 ```
+
+### OpenSpec convention (MANDATORY for Level 2+)
+- Every Level 2+ change gets an OpenSpec change folder BEFORE coding: `proposal.md` + `validation.md` + `tasks.md`.
+- `validation.md` is REQUIRED: user story + acceptance criteria + one Given-When-Then scenario and one test per task.
+- A task is DONE only when its test is green. No spec → no code; changes without a spec get reverted.
+- Persist approved decisions and specs to Engram using the save protocol. → see SDD.md
 
 ---
 
