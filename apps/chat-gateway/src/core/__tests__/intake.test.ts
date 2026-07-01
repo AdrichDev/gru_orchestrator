@@ -68,11 +68,11 @@ afterEach(() => {
 });
 
 describe("GruIntakeAdapter — directive happy path", () => {
-  it("acks then sends the result", async () => {
+  it("sends only the result, no ack (quiet replies)", async () => {
     const adapter = build(async () => "RESULTADO");
     await adapter.handle(msg("haz algo"));
-    expect(sent[0]).toContain("recibió la directiva");
-    expect(sent[sent.length - 1]).toContain("RESULTADO");
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toContain("RESULTADO");
   });
 });
 
