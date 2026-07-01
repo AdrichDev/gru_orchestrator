@@ -18,7 +18,7 @@ import type { ExecutionResult } from "../../../shared/src/ports/results.js";
 import type { ProviderId } from "../../../shared/src/ports/provider.js";
 
 // Ruflo agent catalog path is env-only. No local-path default — the agentic adapter
-// uses pnpm dlx ruflo@3.11.0 for execution; the catalog scan is optional.
+// uses pnpm dlx ruflo@3.16.2 for execution; the catalog scan is optional.
 // When GRU_RUFLO_PATH is unset or the directory is absent, getAgentCatalog() returns []
 // and checkAvailability() reports unavailable. No crash.
 const DEFAULT_RUFLO_PATH = process.env.GRU_RUFLO_PATH ?? "";
@@ -294,7 +294,7 @@ export class RufloProviderAdapter implements ProviderAdapter {
     try {
       const submitResult = await execa(
         "pnpm",
-        ["dlx", "ruflo@3.11.0", "workflow", "run", "-t", template, "--task", prompt, "--format", "json"],
+        ["dlx", "ruflo@3.16.2", "workflow", "run", "-t", template, "--task", prompt, "--format", "json"],
         { reject: false }
       );
       submitRaw = submitResult.stdout || submitResult.stderr;
@@ -402,7 +402,7 @@ async function pollWorkflow(
     try {
       const r = await execa(
         "pnpm",
-        ["dlx", "ruflo@3.11.0", "workflow", "status", workflowId, "--format", "json"],
+        ["dlx", "ruflo@3.16.2", "workflow", "status", workflowId, "--format", "json"],
         { reject: false },
       );
       const m = (r.stdout || "").match(/\{[\s\S]*\}/);

@@ -149,13 +149,13 @@ const PROVIDERS = [
   {
     id: "ruflo (orquestador multi-agente)",
     detect: () => {
-      const r = run(pkgManager, pkgManager === "pnpm" ? ["dlx", "ruflo@3.11.0", "--version"] : ["exec", "--yes", "ruflo@3.11.0", "--version"], { timeout: 180_000 });
+      const r = run(pkgManager, pkgManager === "pnpm" ? ["dlx", "ruflo@3.16.2", "--version"] : ["exec", "--yes", "ruflo@3.16.2", "--version"], { timeout: 180_000 });
       return r.ok ? r.stdout.split(/\r?\n/)[0] : null;
     },
     install: () => ({
-      ok: run(pkgManager, pkgManager === "pnpm" ? ["dlx", "ruflo@3.11.0", "init", "wizard"] : ["exec", "--yes", "ruflo@3.11.0", "init", "wizard"], { inherit: true, timeout: 600_000 }).ok,
+      ok: run(pkgManager, pkgManager === "pnpm" ? ["dlx", "ruflo@3.16.2", "init", "wizard"] : ["exec", "--yes", "ruflo@3.16.2", "init", "wizard"], { inherit: true, timeout: 600_000 }).ok,
     }),
-    hint: "pnpm dlx ruflo@3.11.0 init wizard",
+    hint: "pnpm dlx ruflo@3.16.2 init wizard",
   },
   {
     id: "ecc (auditoría y seguridad)",
