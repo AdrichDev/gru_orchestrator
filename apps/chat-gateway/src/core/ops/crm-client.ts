@@ -1,14 +1,15 @@
 /**
- * Minimal HTTP client for the creador_CRM API, authenticated with the
- * machine-to-machine CRM_SERVICE_TOKEN and scoped per business via x-business-id.
- *
- * Slice 2 covers customer create + query. Bookings/invoices/sales land in later
- * slices alongside name->ID resolution and the confirmation/dedup guardrails.
+ * Minimal HTTP client for the creador_CRM API. Every method goes through the
+ * Operator Agent router (/service/operator/*, requestOperator() below),
+ * authenticated with OPERATOR_SERVICE_TOKEN (x-service-token) — NOT /api/*,
+ * which requires a real Supabase user session (authenticate middleware) the
+ * bot doesn't have (crm-operator-bot-write-ops).
  */
 
 export interface CrmClientConfig {
   baseUrl: string; // e.g. http://localhost:4001/api
-  serviceToken: string;
+  /** Service-to-service token for the Operator Agent router (x-service-token). */
+  operatorToken: string;
 }
 
 export class CrmError extends Error {
@@ -27,22 +28,31 @@ export interface CustomerInput {
 export class CrmClient {
   constructor(private readonly cfg: CrmClientConfig) {}
 
-  private async request<T>(
-    method: string,
-    path: string,
-    businessId: string,
-    body?: unknown,
-  ): Promise<T> {
+  /**
+   * Calls the Operator Agent router (/service/operator/*), a separate auth
+   * mechanism from request(): header `x-service-token` (not `Authorization:
+   * Bearer`), no `x-business-id`. That router is mounted OUTSIDE /api in
+   * creador_CRM (see server.ts: `app.use('/service/operator', ...)`), so it
+   * does not hang off `baseUrl` the way every other route here does — baseUrl
+   * already includes the `/api` suffix (e.g. http://localhost:4001/api), so we
+   * strip it to get the API host and append `/service/operator` ourselves.
+   *
+   * Supports GET and POST (crm-operator-bot-write-ops): all 8 CrmClient
+   * methods now go through here instead of request(), since /api/* requires a
+   * real Supabase user session (authenticate middleware) that the bot doesn't
+   * have. `businessId` (when relevant) travels as a query param on GET or in
+   * the body on POST — the operator router has no `x-business-id` header.
+   */
+  private async requestOperator<T>(method: string, path: string, body?: unknown): Promise<T> {
+    const operatorBase = this.cfg.baseUrl.replace(/\/api\/?$/, "");
     const headers: Record<string, string> = {
-      Authorization: `Bearer ${this.cfg.serviceToken}`,
+      "x-service-token": this.cfg.operatorToken,
       "Content-Type": "application/json",
     };
-    // Omit x-business-id for cross-business routes (empty businessId).
-    if (businessId) headers["x-business-id"] = businessId;
 
     let res: Response;
     try {
-      res = await fetch(`${this.cfg.baseUrl}${path}`, {
+      res = await fetch(`${operatorBase}/service/operator${path}`, {
         method,
         headers,
         body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -55,7 +65,6 @@ export class CrmClient {
     }
 
     if (!res.ok) {
-      // Map the CRM's error envelope to a user-facing message.
       let detail = "";
       try {
         const j = (await res.json()) as { error?: { message?: string } };
@@ -65,80 +74,109 @@ export class CrmClient {
       }
       const friendly =
         res.status === 401
-          ? "Token de servicio inválido (revisa CRM_SERVICE_TOKEN)."
-          : res.status === 400
-            ? `Petición inválida${detail ? `: ${detail}` : ""}.`
-            : res.status === 403
-              ? "Operación no permitida para el bot."
-              : res.status === 422
-                ? `Datos inválidos${detail ? `: ${detail}` : ""}.`
-                : res.status === 404
-                  ? "No encontrado."
-                  : `El CRM devolvió ${res.status}${detail ? `: ${detail}` : ""}.`;
+          ? "Token de operador inválido (revisa OPERATOR_SERVICE_TOKEN)."
+          : res.status === 404
+            ? `No encontrado${detail ? `: ${detail}` : ""}.`
+            : res.status === 422
+              ? `Datos inválidos${detail ? `: ${detail}` : ""}.`
+              : `El CRM devolvió ${res.status}${detail ? `: ${detail}` : ""}.`;
       throw new CrmError(friendly, res.status);
     }
 
-    if (res.status === 204) return undefined as T;
     return (await res.json()) as T;
   }
 
-  createCustomer(businessId: string, input: CustomerInput): Promise<{ id: string }> {
-    return this.request("POST", "/customers", businessId, input);
+  async createCustomer(businessId: string, input: CustomerInput): Promise<{ id: string }> {
+    return this.requestOperator("POST", "/customers", { businessId, ...input });
   }
 
-  listCustomers(businessId: string): Promise<Array<{ id: string; nombre: string; telefono?: string }>> {
-    return this.request("GET", "/customers", businessId);
+  async listCustomers(businessId: string): Promise<Array<{ id: string; nombre: string; telefono?: string }>> {
+    const { customers } = await this.requestOperator<{
+      customers: Array<{ id: string; nombre: string; telefono?: string }>;
+    }>("GET", `/customers?businessId=${encodeURIComponent(businessId)}`);
+    return customers;
   }
 
-  // numero is server-assigned — never sent by the bot.
-  createInvoice(
+  // numero is server-assigned by the operator route — never sent by the bot.
+  async createInvoice(
     businessId: string,
     input: { cliente: string; servicio: string; total: number },
   ): Promise<{ id: string; numero: string }> {
-    return this.request("POST", "/invoices", businessId, input);
+    return this.requestOperator("POST", "/invoices", { businessId, ...input });
   }
 
-  listInvoices(
+  async listInvoices(
     businessId: string,
   ): Promise<Array<{ id: string; cliente: string; total: number; createdAt?: string }>> {
-    return this.request("GET", "/invoices", businessId);
+    const { invoices } = await this.requestOperator<{
+      invoices: Array<{ id: string; cliente: string; total: number; createdAt?: string }>;
+    }>("GET", `/invoices?businessId=${encodeURIComponent(businessId)}`);
+    return invoices;
   }
 
-  createSale(businessId: string, input: { cliente: string; total: number }): Promise<{ id: string }> {
-    return this.request("POST", "/sales", businessId, input);
+  async createSale(businessId: string, input: { cliente: string; total: number }): Promise<{ id: string }> {
+    return this.requestOperator("POST", "/sales", { businessId, ...input });
   }
 
-  listSales(
+  async listSales(
     businessId: string,
   ): Promise<Array<{ id: string; cliente?: string; total: number; createdAt?: string }>> {
-    return this.request("GET", "/sales", businessId);
+    const { sales } = await this.requestOperator<{
+      sales: Array<{ id: string; cliente?: string; total: number; createdAt?: string }>;
+    }>("GET", `/sales?businessId=${encodeURIComponent(businessId)}`);
+    return sales;
   }
 
-  // ── CRM-level (cross-business) ops — service mode needs NO x-business-id ──
-  // The empty businessId means the request omits the x-business-id header, which
-  // is allowed for /projects and /tenants in service mode.
+  // ── CRM-level (cross-business) ops — no businessId at all ──
 
-  /** List all CRMs (Business). Optionally filter by tenantId (query). */
-  listProjects(
+  /**
+   * List real projects — CRMs (negocio) linked to an actual agents-agency
+   * tenant. Backed by GET /service/operator/proyectos, NOT /api/projects:
+   * the latter filters by the caller's Membership rows, which also surfaces
+   * demo/seed/duplicate businesses that happen to have a membership (root
+   * cause of the "listame los proyectos" bug — it returned far more than the
+   * real count). The operator endpoint instead filters server-side by
+   * `tenant_id IS NOT NULL AND eliminado_en IS NULL`, so it only returns
+   * negocios genuinely tied to a real client.
+   *
+   * `tenantId` is kept for signature compatibility with existing callers
+   * (ops-runner.ts, ops/resolve.ts) but is NOT used to filter: the operator
+   * endpoint has no per-tenant filter (its WHERE is `tenant_id IS NOT NULL`,
+   * not `tenant_id = X`). This is not a regression — /api/projects also
+   * ignored this query param before (see projects.ts GET '/': it reads no
+   * `req.query.tenantId` at all).
+   */
+  async listProjects(
     tenantId?: string,
   ): Promise<Array<{ id: string; business: { nombre: string; vertical: string } }>> {
-    const q = tenantId ? `?tenantId=${encodeURIComponent(tenantId)}` : "";
-    return this.request("GET", `/projects${q}`, "");
+    void tenantId; // not filterable server-side by the operator endpoint (see doc above).
+    const { proyectos } = await this.requestOperator<{
+      proyectos: Array<{ negocioId: string; nombre: string; vertical: string }>;
+    }>("GET", "/proyectos");
+    return proyectos.map((p) => ({
+      id: p.negocioId,
+      business: { nombre: p.nombre, vertical: p.vertical },
+    }));
   }
 
   /** List active agents-agency tenants (to link when creating a CRM). */
-  listTenants(): Promise<Array<{ id: string; nombre: string }>> {
-    return this.request("GET", "/tenants", "");
+  async listTenants(): Promise<Array<{ id: string; nombre: string }>> {
+    const { tenants } = await this.requestOperator<{ tenants: Array<{ id: string; nombre: string }> }>(
+      "GET",
+      "/tenants",
+    );
+    return tenants;
   }
 
   /** Create a CRM (Business) linked to an existing tenant. */
-  createProject(input: {
+  async createProject(input: {
     tenantId: string;
     nombre: string;
     vertical?: string;
   }): Promise<{ id: string }> {
-    return this.request("POST", "/projects", "", {
+    return this.requestOperator("POST", "/proyectos", {
       tenantId: input.tenantId,
+      confirmado: true,
       config: { business: { name: input.nombre, vertical: input.vertical ?? "custom" } },
     });
   }

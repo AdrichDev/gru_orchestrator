@@ -42,7 +42,7 @@ function main(): void {
       parser: { bin: process.env.CLAUDE_BIN, model: process.env.CLAUDE_MODEL },
       crm: {
         baseUrl: process.env.CRM_BASE_URL,
-        serviceToken: process.env.CRM_SERVICE_TOKEN,
+        operatorToken: process.env.OPERATOR_SERVICE_TOKEN,
         defaultBusinessId: process.env.DEFAULT_BUSINESS_ID,
         duplicateWindowMin: process.env.DUPLICATE_WINDOW_MINUTES
           ? Number(process.env.DUPLICATE_WINDOW_MINUTES)

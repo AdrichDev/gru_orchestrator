@@ -20,7 +20,8 @@ export interface OpsRunnerOptions {
   parser?: IntentParserOptions;
   crm?: {
     baseUrl?: string;
-    serviceToken?: string;
+    /** Service-to-service token for the Operator Agent router (all CrmClient ops). */
+    operatorToken?: string;
     /** Last-resort business when an order names none. */
     defaultBusinessId?: string;
     duplicateWindowMin?: number;
@@ -44,9 +45,12 @@ export function createOpsRunner(options: OpsRunnerOptions = {}): OrchestrateFn {
   const parseIntent = createIntentParser(options.parser);
   const windowMin = options.crm?.duplicateWindowMin ?? 10;
 
-  const crmReady = Boolean(options.crm?.baseUrl && options.crm?.serviceToken);
+  const crmReady = Boolean(options.crm?.baseUrl && options.crm?.operatorToken);
   const crm = crmReady
-    ? new CrmClient({ baseUrl: options.crm!.baseUrl!, serviceToken: options.crm!.serviceToken! })
+    ? new CrmClient({
+        baseUrl: options.crm!.baseUrl!,
+        operatorToken: options.crm!.operatorToken!,
+      })
     : undefined;
 
   return async function orchestrateOps(prompt, _provider, opts): Promise<string> {
@@ -67,7 +71,7 @@ export function createOpsRunner(options: OpsRunnerOptions = {}): OrchestrateFn {
     if (cmd.entity === "unknown") return renderPreview(cmd);
 
     if (!crm) {
-      return `[DRY-RUN] ${renderPreview(cmd)}\n\n(CRM no configurado: define CRM_BASE_URL y CRM_SERVICE_TOKEN.)`;
+      return `[DRY-RUN] ${renderPreview(cmd)}\n\n(CRM no configurado: define CRM_BASE_URL y OPERATOR_SERVICE_TOKEN.)`;
     }
 
     // Bookings are not executable yet.
