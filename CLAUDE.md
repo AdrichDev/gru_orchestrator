@@ -11,7 +11,7 @@
 architect, tester, security, devil, pm, docs, filesystem, context7, memory, mcp).
 Minions are invoked by name; they receive a scoped task and return a structured result.
 
-**Provider**: an execution BACKEND — the runtime that executes work (local, ruflo, gentlePi,
+**Provider**: an execution BACKEND — the runtime that executes work (local, gentlePi,
 gentlemanCli, ecc, deepagents, engram, awesomeCopilot). Providers are selected by level and
 task type; they fulfill the compute that carries out a minion's task.
 
