@@ -32,13 +32,14 @@ Core rule: Gru coordinates. Minions produce. Policies govern. Human approves.
 Mandatory Minion Contract Rule: In every sub-agent launch prompt, IMPERATIVELY instruct
 the sub-agent to read minion-contract.md BEFORE any work. → see minion-contract.md
 
-Mandatory startup (all 6 steps — none optional):
-  1. Consult Engram.
-  2. If memory exists → confirm repo → ask what is next.
-  3. If no memory exists → Project Intake (see docs/harness-reference.md#project-intake).
-  4. ALWAYS run Filesystem Scan before classifying.
-  5. If in doubt on how to act, it is mandatory to consult SDD.md.
-  6. MANDATORY SKILL CHECK: Before any task, checking LOCAL skills is mandatory.
+Mandatory startup (all 7 steps — none optional):
+  1. Read graphify-out/ completely (if exists): graph.json + GRAPH_REPORT.md + query.py. Current code state.
+  2. With graphify context, consult Engram. Filter results by what graphify revealed.
+  3. If memory exists → confirm repo → ask what is next.
+  4. If no memory exists → Project Intake (see docs/harness-reference.md#project-intake).
+  5. ALWAYS run Filesystem Scan before classifying.
+  6. If in doubt on how to act, it is mandatory to consult SDD.md.
+  7. MANDATORY SKILL CHECK: Before any task, checking LOCAL skills is mandatory.
      The awesomeCopilot catalog is optional (opt-in): IF it is present, also search
      it; if it is absent, do not block — suggest `gru init --awesome-copilot` when
      the task would clearly benefit from a community skill.
@@ -286,6 +287,19 @@ Ruflo does not rule. Ruflo advises or executes when Gru decides so.
 
 ---
 
+## GRAPHIFY PROTOCOL — READ BEFORE ENGRAM
+
+If graphify-out/graph.json exists:
+
+1. Read graph.json completely (god nodes, community structure, cross-file relationships).
+2. Check for GRAPH_REPORT.md (full architecture snapshot) — read if broad review needed.
+3. For specific queries: use `graphify query "<question>"`, `graphify path "<A>" "<B>"`, or `graphify explain "<concept>"` — returns scoped subgraph (smaller context).
+4. **After graphify state is loaded**, consult Engram with filtered context: "given what graphify shows me, what does history say about this?"
+
+Graphify = current code reality. Engram = historical decisions. Always read graphify FIRST, then contextualize with memory.
+
+---
+
 ## MEMORY WITH ENGRAM — CONSULT/SAVE TRIGGERS
 
 > Full entry format, key schema, and examples: → see SDD.md
@@ -293,15 +307,17 @@ Ruflo does not rule. Ruflo advises or executes when Gru decides so.
 ### When to Consult
 
 ```text
-FLOW POINT                    QUERY
-────────────────────────────────────────────────────
-Session start                 → project context
-Before classifying            → prior decisions on similar tasks
-Before invoking architect     → prior architectural decisions
-Before invoking spec          → prior specs for the same module
-Before repeating a solution   → check if it was solved before
-Before Ruflo CONSULT          → accumulated project context
+FLOW POINT                                QUERY
+────────────────────────────────────────────────────────────────
+Session start + graphify loaded         → project context filtered by code state
+Before classifying                      → prior decisions (given graphify insights)
+Before invoking architect               → prior architectural decisions + graphify nodes
+Before invoking spec                    → prior specs (cross-ref with graphify modules)
+Before repeating a solution             → check if solved before (now knowing graphify state)
+Before Ruflo CONSULT                    → accumulated project context + graphify reality
 ```
+
+**Rule**: Never query Engram without first loading graphify. Context without code state = incomplete.
 
 ### When to Save
 
