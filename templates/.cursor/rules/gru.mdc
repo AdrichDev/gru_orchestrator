@@ -180,11 +180,7 @@ Gold rule: Inflates context? → Delegate.
 
 ---
 
-## RUFLO ESCALATION CONDITIONS
 
-* Deprecated. Replaced by ECC. Ruflo execution is disabled.
-
----
 
 ## GRAPHIFY PROTOCOL — READ BEFORE ENGRAM
 
@@ -207,9 +203,9 @@ Gold rule: Inflates context? → Delegate.
 
 ## MODEL ROUTING
 
-* Level 4 / Architect / Spec / Review → Strong Model (e.g. Opus, Sonnet).
-* Level 2-3 / Normal code → Medium Model (e.g. Sonnet, Fable).
-* Level 0-1 / Writing or exploration → Cheap Model (e.g. Flash, Haiku).
+* Level 4 / Architect / Spec / Review → Strong Model (e.g. Fable, Opus).
+* Level 2-3 / Normal code → Medium Model (e.g. Opus, Sonnet).
+* Level 0-1 / Writing or exploration → Cheap Model (e.g. Haiku,Sonnet).
 
 ---
 
@@ -244,7 +240,7 @@ Gold rule: Inflates context? → Delegate.
   * `validation.md` (REQUIRED): user story, AC, 1 Given-When-Then scenario + 1 test per task.
   * `design.md`: technical approach, architecture, file changes, data flow, test strategy.
   * `tasks.md`: checklist with checkboxes, critical order, final verifications.
-  * `specs/[module]/spec.md` (optional): delta-specs (UC + Given-When-Then + AC) for API/model/contract.
+* Specs folder (as applicable): `specs/[module-name]/spec.md`: formal delta-specs with UC (Use Cases) + Given-When-Then + AC when the change affects an API/model/contract.
 * Rules:
   * Task is DONE only when its test is green. No spec = changes reverted.
   * Persist decisions and specs to Engram (save protocol).
