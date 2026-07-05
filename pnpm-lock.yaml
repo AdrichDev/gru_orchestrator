@@ -36,9 +36,6 @@ importers:
       '@gru/provider-local':
         specifier: workspace:*
         version: link:packages/providers/local
-      '@gru/provider-ruflo':
-        specifier: workspace:*
-        version: link:packages/providers/ruflo
       '@gru/shared':
         specifier: workspace:*
         version: link:packages/shared
@@ -75,6 +72,9 @@ importers:
       ffmpeg-static:
         specifier: ^5.3.0
         version: 5.3.0
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@types/express':
         specifier: ^4.17.21
@@ -155,15 +155,6 @@ importers:
       '@gru/shared':
         specifier: workspace:*
         version: link:../../shared
-
-  packages/providers/ruflo:
-    dependencies:
-      '@gru/shared':
-        specifier: workspace:*
-        version: link:../../shared
-      execa:
-        specifier: ^9.6.1
-        version: 9.6.1
 
   packages/shared: {}
 

@@ -12,7 +12,7 @@ const DEFAULT_GATES: QualityGate[] = [
   { id: "spec-compliance",    required: true,  description: "Output matches spec expectations" },
   { id: "code-regression",    required: true,  description: "No test regressions introduced" },
   { id: "review-independence",required: true,  description: "Reviewer is independent from executor" },
-  { id: "test-evidence",      required: true,  description: "Test evidence produced by Ruflo tester" },
+  { id: "test-evidence",      required: true,  description: "Test evidence produced by tester" },
   { id: "security",           required: true,  description: "No security blockers in review" },
   { id: "sdd-traceability",   required: false, description: "SDD artifacts present" },
 ];
@@ -39,7 +39,6 @@ function selectReviewer(
       if (a.availability !== "available") return false;
       if (a.id === excludeId) return false;
       if (!a.canReview) return false;
-      if (policy.requireRufloReviewer && a.provider !== "ruflo") return false;
       return true;
     })
     .sort((a, b) => b.riskLevel - a.riskLevel)[0];
@@ -55,7 +54,6 @@ function selectTester(
       if (a.availability !== "available") return false;
       if (a.id === excludeId) return false;
       if (!a.canTest) return false;
-      if (policy.requireRufloTester && a.provider !== "ruflo") return false;
       return true;
     })
     .sort((a, b) => b.riskLevel - a.riskLevel)[0];
@@ -94,16 +92,16 @@ export class DefaultAgentResolver implements AgentResolver {
     if (!reviewer) {
       throw Object.assign(
         new Error(
-          `CAPABILITY_UNSUPPORTED: No independent Ruflo reviewer available (executor: ${executor.id})`
+          `CAPABILITY_UNSUPPORTED: No independent reviewer available (executor: ${executor.id})`
         ),
         { code: "CAPABILITY_UNSUPPORTED", recoverable: false }
       );
     }
 
     const tester = selectTester(allAgents, executor.id, this.policy);
-    if (this.policy.requireRufloTester && !tester) {
+    if (this.policy.requireDedicatedTester && !tester) {
       throw Object.assign(
-        new Error("CAPABILITY_UNSUPPORTED: No Ruflo tester available — gate BLOCKED"),
+        new Error("CAPABILITY_UNSUPPORTED: No tester available — gate BLOCKED"),
         { code: "CAPABILITY_UNSUPPORTED", recoverable: false }
       );
     }

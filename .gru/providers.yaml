@@ -1,12 +1,4 @@
 providers:
-  ruflo:
-    enabled: true
-    kind: swarm-runtime
-    command: pnpm
-    args: ["dlx", "ruflo@3.16.2"]
-    healthCheckArgs: ["dlx", "ruflo@3.16.2", "--version"]
-    installHint: "pnpm dlx ruflo@3.16.2 init wizard"
-
   gentlePi:
     enabled: true
     kind: coding-harness

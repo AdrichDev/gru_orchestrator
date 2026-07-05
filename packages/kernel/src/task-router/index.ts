@@ -6,10 +6,6 @@ interface ScoringRule {
 }
 
 const PROVIDER_RULES: Record<Exclude<ProviderId, "local">, ScoringRule[]> = {
-  ruflo: [
-    { keywords: ["swarm", "swarms", "multiagente", "paralelo"], weight: 5 },
-    { keywords: ["agente", "coordinacion", "coordinación", "distribuida"], weight: 2 }
-  ],
   gentlePi: [
     { keywords: ["sdd", "openspec", "tdd", "adr", "arnes", "arnés"], weight: 5 },
     { keywords: ["especificaciones", "test-driven", "disciplinado"], weight: 3 }
@@ -52,7 +48,6 @@ export function routeTask(task: ProviderTask): RoutingDecision {
   
   const providerScores: Record<ProviderId, number> = {
     local: 0,
-    ruflo: 0,
     gentlePi: 0,
     gentlemanCli: 0,
     ecc: 0,
@@ -63,7 +58,6 @@ export function routeTask(task: ProviderTask): RoutingDecision {
 
   const providerReasons: Record<ProviderId, string[]> = {
     local: [],
-    ruflo: [],
     gentlePi: [],
     gentlemanCli: [],
     ecc: [],

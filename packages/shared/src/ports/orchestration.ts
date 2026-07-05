@@ -70,9 +70,9 @@ export interface AgentResolver {
 export interface SupervisionPolicy {
   /** executor.id !== reviewer.id always. */
   readonly noSelfApproval: true;
-  /** If no Ruflo tester: gate BLOCKED, not degraded silently. */
-  requireRufloTester: boolean;
-  requireRufloReviewer: boolean;
+  /** If no dedicated tester: gate BLOCKED, not degraded silently. */
+  requireDedicatedTester: boolean;
+  requireDedicatedReviewer: boolean;
   requireIndependentReview: boolean;
   /** When harness supports it, reviewer runs with fresh context. */
   requireFreshContext: boolean;

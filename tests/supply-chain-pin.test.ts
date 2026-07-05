@@ -12,8 +12,6 @@ import { resolve } from "node:path";
 const ROOT = resolve(__dirname, "..");
 
 const GUARDED_FILES = [
-  "packages/kernel/src/adapters/ruflo.ts",
-  "packages/providers/ruflo/src/index.ts",
   "scripts/setup-providers.mjs",
 ];
 

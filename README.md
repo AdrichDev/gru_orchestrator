@@ -24,7 +24,7 @@
 
 ## 🧠 ¿Qué es Gru Harness?
 
-Gru es un **harness orquestador de LLMs**: una capa de coordinación que centraliza la toma de decisiones, evalúa el riesgo de cada tarea y delega la ejecución en providers especializados (Ruflo, Gentle-Pi, ECC, Engram, Awesome Copilot…). Corre dentro de Claude Code, Codex, Gemini CLI, OpenCode, Cursor o Antigravity — o standalone vía el CLI `gru`.
+Gru es un **harness orquestador de LLMs**: una capa de coordinación que centraliza la toma de decisiones, evalúa el riesgo de cada tarea y delega la ejecución en providers especializados (Gentle-Pi, ECC, Engram, Awesome Copilot…). Corre dentro de Claude Code, Codex, Gemini CLI, OpenCode, Cursor o Antigravity — o standalone vía el CLI `gru`.
 
 ### Principios fundamentales
 
@@ -40,7 +40,7 @@ Gru es un **harness orquestador de LLMs**: una capa de coordinación que central
 Dos conceptos distintos, **no** intercambiables:
 
 * **Minion** — un *rol* delegado (builder, reviewer, architect, tester, security, devil, pm, docs, filesystem, context7, memory, mcp). Es la **unidad de trabajo** que Gru delega. 13 roles, cada uno con una responsabilidad única.
-* **Provider** — un *backend* de ejecución (`local`, `ruflo`, `gentlePi`, `gentlemanCli`, `ecc`, `deepagents`, `engram`, `awesomeCopilot`). Es el **runtime** que ejecuta el trabajo del Minion.
+* **Provider** — un *backend* de ejecución (`local`, `gentlePi`, `gentlemanCli`, `ecc`, `deepagents`, `engram`, `awesomeCopilot`). Es el **runtime** que ejecuta el trabajo del Minion.
 
 > Un Minion es un ROL. Un Provider es un BACKEND. Gru elige ambos según nivel y tipo de tarea.
 
@@ -56,7 +56,7 @@ Gru puntúa cada tarea (complejidad + riesgo) y la clasifica antes de actuar:
 | **1** | Pequeña | `local` + devil/caveman |
 | **2** | Media | architect ligero → mini-spec → builder → tester → reviewer |
 | **3** | Grande | architect → devil → spec → builder por unidades → tester → security → reviewer |
-| **4** | Crítica | + Ruflo CONSULT + **aprobación humana** + reviewer independiente |
+| **4** | Crítica | + ECC CONSULT + **aprobación humana** + reviewer independiente |
 
 El **Filesystem Scan** es obligatorio antes de clasificar. La evidencia del repo puede subir el nivel, nunca bajarlo sin pruebas.
 
@@ -110,7 +110,7 @@ termina con exit code 2 — nunca simula.
 
 ## 🔌 Providers
 
-Gru delega en providers especializados: `local`, `ruflo`, `gentlePi`, `gentlemanCli`,
+Gru delega en providers especializados: `local`, `gentlePi`, `gentlemanCli`,
 `ecc`, `deepagents`, `engram` y `awesomeCopilot` (catálogo search-only). Bajo runtime
 estricto, un provider ausente bloquea la tarea con el hint de instalación — sin fallback
 silencioso.

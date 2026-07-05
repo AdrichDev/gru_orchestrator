@@ -6,7 +6,7 @@ import type { AgentDescriptor } from "../../../../shared/src/ports/agent.js";
 function makeAgent(overrides: Partial<AgentDescriptor>): AgentDescriptor {
   return {
     id: "agent-default",
-    provider: "ruflo",
+    provider: "local",
     sourcePath: "/fake/SKILL.md",
     name: "Default",
     description: "",
@@ -57,22 +57,6 @@ describe("DefaultSupervisionPolicy.validate", () => {
     const tester = makeAgent({ id: "agent-validator", canTest: true });
     const violations = policy.validate(makeAssignment(same, same, tester));
     expect(violations.some((v) => v.includes("noSelfApproval"))).toBe(true);
-  });
-
-  it("flags requireRufloReviewer when reviewer is not ruflo", () => {
-    const executor = makeAgent({ id: "agent-coder", canWrite: true });
-    const reviewer = makeAgent({ id: "ac-reviewer", provider: "awesomeCopilot", canReview: true });
-    const tester = makeAgent({ id: "agent-validator", canTest: true });
-    const violations = policy.validate(makeAssignment(executor, reviewer, tester));
-    expect(violations.some((v) => v.includes("requireRufloReviewer"))).toBe(true);
-  });
-
-  it("flags requireRufloTester when tester is not ruflo", () => {
-    const executor = makeAgent({ id: "agent-coder", canWrite: true });
-    const reviewer = makeAgent({ id: "agent-reviewer", canReview: true });
-    const tester = makeAgent({ id: "ext-tester", provider: "awesomeCopilot", canTest: true });
-    const violations = policy.validate(makeAssignment(executor, reviewer, tester));
-    expect(violations.some((v) => v.includes("requireRufloTester"))).toBe(true);
   });
 
   it("flags reviewerIncapable when canReview=false", () => {

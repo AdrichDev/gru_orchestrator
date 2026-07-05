@@ -24,9 +24,6 @@
       "@gru/skills/*": [
         "./packages/skills/src/*"
       ],
-      "@gru/provider-ruflo": [
-        "./packages/providers/ruflo/src/index.ts"
-      ],
       "@gru/provider-awesome-copilot": [
         "./packages/providers/awesome-copilot/src/index.ts"
       ],

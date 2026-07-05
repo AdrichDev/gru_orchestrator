@@ -35,9 +35,8 @@ class StubProvider implements GruProvider {
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe("SQ-01 — GruProviderRegistry (extension seam)", () => {
-  it("PROVIDERS export contains all 8 built-in providers", () => {
+  it("PROVIDERS export contains all 7 built-in providers", () => {
     const ids = Object.keys(PROVIDERS);
-    expect(ids).toContain("ruflo");
     expect(ids).toContain("gentlePi");
     expect(ids).toContain("gentlemanCli");
     expect(ids).toContain("ecc");
@@ -45,7 +44,7 @@ describe("SQ-01 — GruProviderRegistry (extension seam)", () => {
     expect(ids).toContain("engram");
     expect(ids).toContain("awesomeCopilot");
     expect(ids).toContain("local");
-    expect(ids).toHaveLength(8);
+    expect(ids).toHaveLength(7);
   });
 
   it("registry is pre-populated: getRegisteredProviders includes all built-ins", () => {
@@ -77,7 +76,6 @@ describe("SQ-01 — GruProviderRegistry (extension seam)", () => {
     expect(ids).toContain("another-plugin");
 
     // Built-ins still present
-    expect(ids).toContain("ruflo");
     expect(ids).toContain("awesomeCopilot");
     expect(ids).toContain("local");
   });
