@@ -98,6 +98,13 @@ Regla de oro: ¿Infla mi contexto? → Delegar.
 * Sub-agente inicia con contexto limpio (sin memoria del chat).
 * Carga obligatoria de `minion-contract.md` en el root del proyecto.
 
+### Input Token Minimization
+
+* **Prompt Caching Structure**: Mantener bloques estáticos (arnés, especificaciones) al inicio del prompt. Datos dinámicos (logs de comandos, archivos editados, diffs) estrictamente al final para maximizar hits de caché en llamadas del bucle de herramientas.
+* **Scope-Scoping**: No usar git diffs globales. Acotar diffs solo a rutas específicas afectadas por la tarea.
+* **Log Sanitization**: Purgar outputs verbosos de compilación o test. Inyectar en el chat solo stacktraces compactos y resúmenes de salida.
+* **Tool Use Consolidation**: Unificar comandos bash sucesivos en scripts de ejecución local para minimizar el número de llamadas del bucle de herramientas.
+
 ### Complexity Evaluation
 
 | Señal | Puntos |
