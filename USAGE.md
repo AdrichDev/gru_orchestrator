@@ -118,7 +118,7 @@ Orquesta una tarea de punta a punta:
 ```text
 1. classifyTask()      → nivel 0-4 + señales de riesgo (bilingüe ES/EN)
 2. Gate de aprobación  → si hay riesgo: "¿Apruebas la ejecución? (si/NO)"
-3. routeTask()         → elige el provider por keywords (ruflo, gentlePi, ecc, engram...)
+3. routeTask()         → elige el provider por keywords (gentlePi, ecc, engram...)
 4. Devil's Advocate    → veto pre-vuelo (provider ausente, catálogo como executor)
 5. Health check real   → si el provider no está instalado: BLOCKED + cómo instalarlo
 6. Ejecución real      → resultado + log auditable en runs/run_*.json
@@ -217,8 +217,7 @@ Re-ejecutar `gru init` es idempotente: los archivos existentes se omiten salvo c
 (contratos, `.mcp.json`, archivos de runtime) no se escriben; solo se siembran los `.gru/*`
 compartidos en `~/.gru/`.
 
-`.mcp.json` registra los servidores MCP de **claude-flow/ruflo**, **context7** y
-**engram**. Ajusta `ENGRAM_BIN` a tu ruta local.
+`.mcp.json` registra los servidores MCP de **context7** y **engram**. Ajusta `ENGRAM_BIN` a tu ruta local.
 
 ---
 
@@ -229,7 +228,6 @@ Gru no produce artefactos: delega en providers especializados. El catálogo:
 | Provider ID | Ejecutable / Comando | Rol | Externo | Hint de instalación |
 | :--- | :--- | :--- | :--- | :--- |
 | **local** | comando directo | Tareas locales del workspace (filesystem, git, npm, tests). | no | — |
-| **ruflo** | `ruflo` | Orquestador multi-agente para tareas complejas y swarms paralelos. | sí | `pnpm dlx ruflo@latest init wizard` |
 | **gentlePi** | `gentle-ai`/`pi` | Especificación SDD/OpenSpec y TDD disciplinado. | sí | `pi install npm:gentle-pi` (requiere `pi`) |
 | **gentlemanCli** | `gentle-ai` | Diagnóstico de entorno, actualización de skills y sync. | sí | instalador oficial (macOS/Linux); Windows: manual o WSL |
 | **ecc** | `ecc` | Auditoría de seguridad, políticas y detección de CVEs. | sí | `pnpm add -D ecc-universal` |
@@ -252,7 +250,6 @@ instalado, bloquea la tarea (`[BLOCKED]`) y muestra el hint exacto para instalar
 | `recuerda que decidimos usar JWT sin sesiones` | 0 | no | engram |
 | `busca en el catalogo una skill de code review` | 0 | no | awesomeCopilot |
 | `audita la seguridad y revisa CVEs` | 2 | **sí** | ecc |
-| `usa swarm multiagente para la feature de pagos` | 1 | **sí** (gasto) | ruflo |
 | `borra la base de datos de producción` | 4 | **sí** | bloqueada sin aprobación |
 
 ---
@@ -327,8 +324,8 @@ riesgo. Cada nivel define qué providers/roles intervienen:
 Nivel 0  local
 Nivel 1  local → validación ligera
 Nivel 2  scan → gentlePi (mini-spec) → local → tests → devil → engram
-Nivel 3  scan → gentlePi (SDD) → devil → local/ruflo → tests → ecc → engram
-Nivel 4  todo lo anterior + Ruflo CONSULT + aprobación humana doble
+Nivel 3  scan → gentlePi (SDD) → devil → local → tests → ecc → engram
+Nivel 4  todo lo anterior + ECC CONSULT + aprobación humana doble
 ```
 
 Reglas que el harness aplica solo:

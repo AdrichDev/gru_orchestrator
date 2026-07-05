@@ -43,7 +43,6 @@
     "@gru/provider-gentle-pi": "workspace:*",
     "@gru/provider-gentleman-cli": "workspace:*",
     "@gru/provider-local": "workspace:*",
-    "@gru/provider-ruflo": "workspace:*",
     "@gru/shared": "workspace:*",
     "@types/node": "^25.9.2",
     "tsup": "^8.5.1",

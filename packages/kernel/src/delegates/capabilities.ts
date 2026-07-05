@@ -14,15 +14,6 @@ import type {
  * it does not return a terminal result inline.
  */
 const SPECS: Record<DelegationProviderId, ProviderCapability[]> = {
-  // Ruflo: async workflow submission (needs MCP + Claude Code to reach COMPLETED).
-  ruflo: [
-    { name: "planning", operations: ["plan"], synchronous: false },
-    { name: "implementation", operations: ["implement"], synchronous: false },
-    { name: "review", operations: ["review"], synchronous: false },
-    { name: "testing", operations: ["test"], synchronous: false },
-    { name: "security", operations: ["security"], synchronous: false },
-    { name: "multiAgent", operations: ["swarm"], synchronous: false },
-  ],
   // ECC: synchronous advisory `ecc consult <prompt>`.
   ecc: [
     { name: "review", operations: ["consult", "review"], synchronous: true },

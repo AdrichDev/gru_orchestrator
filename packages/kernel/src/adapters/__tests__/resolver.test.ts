@@ -10,7 +10,7 @@ import type { ProviderId } from "../../../../shared/src/ports/provider.js";
 function makeAgent(id: string, overrides: Partial<AgentDescriptor> = {}): AgentDescriptor {
   return {
     id,
-    provider: "ruflo",
+    provider: "local",
     sourcePath: "/fake",
     name: id,
     description: "",
@@ -29,7 +29,7 @@ function makeAgent(id: string, overrides: Partial<AgentDescriptor> = {}): AgentD
 }
 
 class FakeAgentCatalog implements AgentCatalog {
-  readonly provider: ProviderId = "ruflo";
+  readonly provider: ProviderId = "local";
   constructor(private agents: AgentDescriptor[]) {}
   async listAgents(): Promise<AgentDescriptor[]> { return this.agents; }
   async getAgent(id: string): Promise<AgentDescriptor | undefined> { return this.agents.find(a => a.id === id); }
@@ -59,7 +59,7 @@ describe("DefaultAgentResolver", () => {
 
   function buildRegistry(agents: AgentDescriptor[]): DefaultProviderRegistry {
     const registry = new DefaultProviderRegistry();
-    registry.register(new FakeProviderAdapter("ruflo", agents));
+    registry.register(new FakeProviderAdapter("local", agents));
     return registry;
   }
 
@@ -99,25 +99,37 @@ describe("DefaultAgentResolver", () => {
     );
   });
 
-  it("throws when requireRufloTester=true but no tester available", async () => {
+  it("throws when requireDedicatedTester=true but no tester available", async () => {
+    const customPolicy = new DefaultSupervisionPolicy();
+    customPolicy.requireDedicatedTester = true;
     const agents = [
       makeAgent("agent-coder",    { canWrite: true,  canReview: false, canTest: false }),
       makeAgent("agent-reviewer", { canWrite: false, canReview: true,  canTest: false, executionMode: "review" }),
     ];
-    const resolver = new DefaultAgentResolver(buildRegistry(agents), policy);
+    const resolver = new DefaultAgentResolver(buildRegistry(agents), customPolicy);
     await expect(resolver.resolve({ id: "t1", prompt: "test" }, "apply")).rejects.toThrow(
       "CAPABILITY_UNSUPPORTED"
     );
   });
 
   it("throws SUPERVISION_VIOLATION if policy detects violation after selection", async () => {
-    // Policy with requireRufloReviewer=true but reviewer is awesomeCopilot provider
+    const mockPolicy = {
+      noSelfApproval: true,
+      requireDedicatedTester: false,
+      requireDedicatedReviewer: false,
+      requireIndependentReview: true,
+      requireFreshContext: false,
+      blockOnMissingEvidence: true,
+      validate: () => ["mock-violation"]
+    } as unknown as DefaultSupervisionPolicy;
     const agents = [
       makeAgent("agent-coder",    { canWrite: true,  canReview: false, canTest: false }),
-      makeAgent("ac-reviewer",    { provider: "awesomeCopilot", canWrite: false, canReview: true, canTest: true, executionMode: "review" }),
+      makeAgent("agent-reviewer", { canWrite: false, canReview: true,  canTest: true, executionMode: "review" }),
     ];
-    const resolver = new DefaultAgentResolver(buildRegistry(agents), policy);
-    await expect(resolver.resolve({ id: "t1", prompt: "test" }, "apply")).rejects.toThrow();
+    const resolver = new DefaultAgentResolver(buildRegistry(agents), mockPolicy);
+    await expect(resolver.resolve({ id: "t1", prompt: "test" }, "apply")).rejects.toThrow(
+      "SUPERVISION_VIOLATION"
+    );
   });
 
   it("throws CAPABILITY_UNSUPPORTED when no providers in registry", async () => {
@@ -142,17 +154,17 @@ describe("DefaultAgentResolver — multi-provider", () => {
     });
   }
 
-  function rufloReviewer(id: string): AgentDescriptor {
+  function localReviewer(id: string): AgentDescriptor {
     return makeAgent(id, {
-      provider: "ruflo",
+      provider: "local",
       canWrite: false, canReview: true, canTest: true,
       executionMode: "review",
     });
   }
 
-  function rufloTester(id: string): AgentDescriptor {
+  function localTester(id: string): AgentDescriptor {
     return makeAgent(id, {
-      provider: "ruflo",
+      provider: "local",
       canWrite: false, canReview: false, canTest: true,
       executionMode: "test",
     });
@@ -160,84 +172,84 @@ describe("DefaultAgentResolver — multi-provider", () => {
 
   function buildMultiRegistry(
     acAgents: AgentDescriptor[],
-    rufloAgents: AgentDescriptor[]
+    localAgents: AgentDescriptor[]
   ): DefaultProviderRegistry {
     const registry = new DefaultProviderRegistry();
     registry.register(new FakeProviderAdapter("awesomeCopilot", acAgents));
-    registry.register(new FakeProviderAdapter("ruflo", rufloAgents));
+    registry.register(new FakeProviderAdapter("local", localAgents));
     return registry;
   }
 
-  it("selects AC skill as executor when it matches phase, reviewer+tester from Ruflo", async () => {
+  it("selects AC skill as executor when it matches phase, reviewer+tester from local", async () => {
     const registry = buildMultiRegistry(
       [acAgent("invocable-skill")],
-      [rufloReviewer("agent-reviewer"), rufloTester("agent-validator")]
+      [localReviewer("agent-reviewer"), localTester("agent-validator")]
     );
     const resolver = new DefaultAgentResolver(registry, policy);
     const assignment = await resolver.resolve({ id: "t1", prompt: "audit security" }, "apply");
 
     expect(assignment.executor.provider).toBe("awesomeCopilot");
     expect(assignment.executor.id).toBe("invocable-skill");
-    expect(assignment.reviewer.provider).toBe("ruflo");
-    expect(assignment.tester.provider).toBe("ruflo");
+    expect(assignment.reviewer.provider).toBe("local");
+    expect(assignment.tester.provider).toBe("local");
   });
 
-  it("selects Ruflo as executor when AC has no invocable skills (all unavailable)", async () => {
+  it("selects local as executor when AC has no invocable skills (all unavailable)", async () => {
     const contextOnlyAc = makeAgent("context-only-skill", {
       provider: "awesomeCopilot",
       availability: "unavailable",
       canWrite: false, canReview: false, canTest: false,
     });
-    const rufloExecutor = makeAgent("agent-coder", {
-      provider: "ruflo",
+    const localExecutor = makeAgent("agent-coder", {
+      provider: "local",
       canWrite: true, executionMode: "write",
     });
 
     const registry = buildMultiRegistry(
       [contextOnlyAc],
-      [rufloExecutor, rufloReviewer("agent-reviewer"), rufloTester("agent-validator")]
+      [localExecutor, localReviewer("agent-reviewer"), localTester("agent-validator")]
     );
     const resolver = new DefaultAgentResolver(registry, policy);
     const assignment = await resolver.resolve({ id: "t1", prompt: "build feature" }, "apply");
 
-    expect(assignment.executor.provider).toBe("ruflo");
+    expect(assignment.executor.provider).toBe("local");
     expect(assignment.executor.id).toBe("agent-coder");
   });
 
-  it("reviewer is always Ruflo regardless of executor provider", async () => {
+  it("reviewer is always local regardless of executor provider", async () => {
     const registry = buildMultiRegistry(
       [acAgent("invocable-skill")],
-      [rufloReviewer("agent-reviewer"), rufloTester("agent-validator")]
+      [localReviewer("agent-reviewer"), localTester("agent-validator")]
     );
     const resolver = new DefaultAgentResolver(registry, policy);
     const assignment = await resolver.resolve({ id: "t1", prompt: "test" }, "apply");
 
-    expect(assignment.reviewer.provider).toBe("ruflo");
+    expect(assignment.reviewer.provider).toBe("local");
     expect(assignment.reviewer.canReview).toBe(true);
   });
 
-  it("tester is always Ruflo regardless of executor provider", async () => {
+  it("tester is always local regardless of executor provider", async () => {
     const registry = buildMultiRegistry(
       [acAgent("invocable-skill")],
-      [rufloReviewer("agent-reviewer"), rufloTester("agent-validator")]
+      [localReviewer("agent-reviewer"), localTester("agent-validator")]
     );
     const resolver = new DefaultAgentResolver(registry, policy);
     const assignment = await resolver.resolve({ id: "t1", prompt: "test" }, "apply");
 
-    expect(assignment.tester.provider).toBe("ruflo");
+    expect(assignment.tester.provider).toBe("local");
     expect(assignment.tester.canTest).toBe(true);
   });
 
-  it("blocks when AC skill is context-only and no Ruflo executor either", async () => {
+  it("blocks when AC skill is context-only and no local executor either", async () => {
     const contextOnlyAc = makeAgent("context-only", {
       provider: "awesomeCopilot",
       availability: "unavailable",
       canWrite: false,
     });
-    // Only reviewer/tester in Ruflo, no executor
+    // Only reviewer/tester in local, no executor
     const registry = buildMultiRegistry(
       [contextOnlyAc],
-      [rufloReviewer("agent-reviewer"), rufloTester("agent-validator")]
+      [localReviewer("agent-reviewer"), localTester("agent-validator")]
     );
     const resolver = new DefaultAgentResolver(registry, policy);
     await expect(resolver.resolve({ id: "t1", prompt: "build" }, "apply")).rejects.toThrow(
@@ -248,7 +260,7 @@ describe("DefaultAgentResolver — multi-provider", () => {
   it("executor id !== reviewer id even across providers", async () => {
     const registry = buildMultiRegistry(
       [acAgent("ac-executor")],
-      [rufloReviewer("agent-reviewer"), rufloTester("agent-validator")]
+      [localReviewer("agent-reviewer"), localTester("agent-validator")]
     );
     const resolver = new DefaultAgentResolver(registry, policy);
     const assignment = await resolver.resolve({ id: "t1", prompt: "test" }, "apply");
@@ -259,11 +271,11 @@ describe("DefaultAgentResolver — multi-provider", () => {
   it("registry.getAvailable returns only available adapters", async () => {
     const registry = new DefaultProviderRegistry();
     registry.register(new FakeProviderAdapter("awesomeCopilot", [acAgent("ac-skill")]));
-    registry.register(new FakeProviderAdapter("ruflo", [rufloReviewer("agent-reviewer")]));
+    registry.register(new FakeProviderAdapter("local", [localReviewer("agent-reviewer")]));
 
     const available = await registry.getAvailable();
     expect(available).toHaveLength(2);
     expect(available.map((a) => a.id)).toContain("awesomeCopilot");
-    expect(available.map((a) => a.id)).toContain("ruflo");
+    expect(available.map((a) => a.id)).toContain("local");
   });
 });

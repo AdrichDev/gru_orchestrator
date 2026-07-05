@@ -14,7 +14,6 @@ import {
 import type { SddPhase } from "../../../shared/src/ports/agent.js";
 import type { PlanResult, TaskAssignment } from "../../../shared/src/ports/orchestration.js";
 import type { ReviewResult, TestEvidence } from "../../../shared/src/ports/results.js";
-import { RufloProviderAdapter } from "../adapters/ruflo.js";
 import { AwesomeCopilotProviderAdapter } from "../adapters/awesome-copilot.js";
 import { DefaultProviderRegistry } from "../adapters/registry-agentic.js";
 import { DefaultAgentResolver } from "../adapters/resolver.js";
@@ -25,7 +24,6 @@ import { resolveDelegate } from "../delegates/resolver.js";
 import type { ProviderExecutionRequest } from "../../../shared/src/ports/delegation.js";
 
 // Import Providers via workspace package names
-import { RufloProvider } from "@gru/provider-ruflo";
 import { GentlePiProvider } from "@gru/provider-gentle-pi";
 import { GentlemanCliProvider } from "@gru/provider-gentleman-cli";
 import { EccProvider } from "@gru/provider-ecc";
@@ -46,7 +44,6 @@ import {
 } from "./agentic-helpers.js";
 
 export const PROVIDERS: Record<ProviderId, GruProvider> = {
-  ruflo: new RufloProvider(),
   gentlePi: new GentlePiProvider(),
   gentlemanCli: new GentlemanCliProvider(),
   ecc: new EccProvider(),
@@ -311,7 +308,6 @@ export async function orchestrateAgenticTask(
 ): Promise<PlanResult> {
   const taskId = `agentic_${Date.now()}`;
 
-  // R4: when operation is provided, use delegation registry for capability-based dispatch.
   if (operation) {
     const delegationRegistry = createDelegationRegistry();
     const resolution = await resolveDelegate(operation, delegationRegistry);
@@ -331,152 +327,33 @@ export async function orchestrateAgenticTask(
       };
     }
 
-    // Non-ruflo delegate: use delegation layer directly (no agentic pipeline).
-    if (resolution.delegateId !== "ruflo") {
-      const delegateReq: ProviderExecutionRequest = {
-        taskId,
-        prompt,
-        operation,
-        contextRefs: [],
-        artifactRefs: [],
-        constraints: [],
-        metadata: { phase, sddId },
-      };
-      const result = await resolution.delegate.execute(delegateReq);
-      const approved = result.status === "COMPLETED";
-      const blocker = approved
-        ? undefined
-        : `${String(resolution.delegateId)}:${result.status} — ${result.error ?? "no output"}`;
-      return {
-        plan: { id: taskId, description: prompt, assignments: [], gates: [], createdAt: new Date().toISOString() },
-        executionResults: [],
-        reviewResults: [],
-        testEvidences: [],
-        gateResults: [],
-        approved,
-        blockers: blocker ? [blocker] : [],
-      };
-    }
-    // delegateId === "ruflo": fall through to the existing agentic pipeline below.
-  }
-
-  const policy = new DefaultSupervisionPolicy();
-  const registry = new DefaultProviderRegistry();
-  // Gru registers all providers. Resolver picks executor from any; reviewer+tester always Ruflo.
-  registry.register(new AwesomeCopilotProviderAdapter());
-  registry.register(new RufloProviderAdapter());
-
-  const resolver = new DefaultAgentResolver(registry, policy);
-
-  const gruTask = { id: taskId, prompt, metadata: {} };
-  const assignment = await resolver.resolve(gruTask, phase);
-
-  console.log(`\n[Agentic] executor  → ${assignment.executor.id}`);
-  console.log(`[Agentic] reviewer  → ${assignment.reviewer.id}`);
-  console.log(`[Agentic] tester    → ${assignment.tester.id}`);
-
-  const rufloAdapter = registry.get("ruflo")!;
-
-  // Step 1: executor — must reach COMPLETED before pipeline advances
-  const executionResult = await rufloAdapter.execute({
-    ...assignment,
-    task: { ...gruTask, metadata: { role: "executor" } },
-  });
-  const execState = parseWorkflowState(executionResult);
-  console.log(`[Agentic] execution ${execState} (success=${executionResult.success})`);
-
-  if (!executionResult.success) {
-    const gates = evaluateAllGates(assignment, executionResult, makeBlockedReview(assignment), undefined, sddId);
+    const delegateReq: ProviderExecutionRequest = {
+      taskId,
+      prompt,
+      operation,
+      contextRefs: [],
+      artifactRefs: [],
+      constraints: [],
+      metadata: { phase, sddId },
+    };
+    const result = await resolution.delegate.execute(delegateReq);
+    const approved = result.status === "COMPLETED";
+    const blocker = approved
+      ? undefined
+      : `${String(resolution.delegateId)}:${result.status} — ${result.error ?? "no output"}`;
     return {
-      plan: { id: taskId, description: prompt, assignments: [assignment], gates: assignment.gates, createdAt: new Date().toISOString() },
-      executionResults: [executionResult],
+      plan: { id: taskId, description: prompt, assignments: [], gates: [], createdAt: new Date().toISOString() },
+      executionResults: [],
       reviewResults: [],
       testEvidences: [],
-      gateResults: gates,
-      approved: false,
-      blockers: [`execution:${execState} — ${executionResult.error?.message ?? "no output"}`],
+      gateResults: [],
+      approved,
+      blockers: blocker ? [blocker] : [],
     };
   }
 
-  // Step 2: reviewer — only reached when executor COMPLETED
-  const reviewerResult = await rufloAdapter.execute({
-    ...assignment,
-    task: { ...gruTask, metadata: { role: "reviewer", previousOutput: executionResult.output } },
-  });
-  const reviewerState = parseWorkflowState(reviewerResult);
-  console.log(`[Agentic] reviewer  ${reviewerState} (success=${reviewerResult.success})`);
-
-  if (!reviewerResult.success) {
-    const gates = evaluateAllGates(assignment, executionResult, makeBlockedReview(assignment), undefined, sddId);
-    return {
-      plan: { id: taskId, description: prompt, assignments: [assignment], gates: assignment.gates, createdAt: new Date().toISOString() },
-      executionResults: [executionResult],
-      reviewResults: [],
-      testEvidences: [],
-      gateResults: gates,
-      approved: false,
-      blockers: [`reviewer:${reviewerState} — ${reviewerResult.error?.message ?? "no output"}`],
-    };
-  }
-
-  const reviewResult = buildReviewResultFromOutput(assignment, reviewerResult.output, reviewerResult.success);
-  console.log(`[Agentic] review    ${reviewResult.approved ? "approved" : "rejected"}`);
-
-  if (!reviewResult.approved) {
-    const gates = evaluateAllGates(assignment, executionResult, reviewResult, undefined, sddId);
-    return {
-      plan: { id: taskId, description: prompt, assignments: [assignment], gates: assignment.gates, createdAt: new Date().toISOString() },
-      executionResults: [executionResult],
-      reviewResults: [reviewResult],
-      testEvidences: [],
-      gateResults: gates,
-      approved: false,
-      blockers: reviewResult.blockers,
-    };
-  }
-
-  // Step 3: tester — only reached when reviewer COMPLETED and approved
-  const testerResult = await rufloAdapter.execute({
-    ...assignment,
-    task: { ...gruTask, metadata: { role: "tester", previousOutput: executionResult.output } },
-  });
-  const testerState = parseWorkflowState(testerResult);
-  console.log(`[Agentic] tester    ${testerState} (success=${testerResult.success})`);
-
-  if (!testerResult.success) {
-    const gates = evaluateAllGates(assignment, executionResult, reviewResult, undefined, sddId);
-    return {
-      plan: { id: taskId, description: prompt, assignments: [assignment], gates: assignment.gates, createdAt: new Date().toISOString() },
-      executionResults: [executionResult],
-      reviewResults: [reviewResult],
-      testEvidences: [],
-      gateResults: gates,
-      approved: false,
-      blockers: [`tester:${testerState} — ${testerResult.error?.message ?? "no output"}`],
-    };
-  }
-
-  const testEvidence = buildTestEvidenceFromOutput(assignment, testerResult.output, testerResult.success);
-  console.log(`[Agentic] test      ${testEvidence.passed ? "passed" : "failed"}`);
-
-  const gates = evaluateAllGates(assignment, executionResult, reviewResult, testEvidence, sddId);
-  const failedRequired = gates.filter((g) => {
-    const gate = assignment.gates.find((ag) => ag.id === g.gate);
-    return gate?.required && (g.status === "failed" || g.status === "blocked");
-  });
-
-  const runsDir = resolveRunsDir();
-  fs.mkdirSync(runsDir, { recursive: true });
-  const runLogPath = path.join(runsDir, `agentic_${taskId}.json`);
-  fs.writeFileSync(runLogPath, JSON.stringify({ taskId, prompt, phase, assignment, executionResult, reviewResult, testEvidence, gates }, null, 2), "utf-8");
-
-  return {
-    plan: { id: taskId, description: prompt, assignments: [assignment], gates: assignment.gates, createdAt: new Date().toISOString() },
-    executionResults: [executionResult],
-    reviewResults: [reviewResult],
-    testEvidences: [testEvidence],
-    gateResults: gates,
-    approved: failedRequired.length === 0,
-    blockers: failedRequired.map((g) => `${g.gate}: ${g.reason ?? g.status}`),
-  };
+  throw Object.assign(
+    new Error("CAPABILITY_UNSUPPORTED: Agentic pipeline requires a delegated operation without Ruflo"),
+    { code: "CAPABILITY_UNSUPPORTED", recoverable: false }
+  );
 }

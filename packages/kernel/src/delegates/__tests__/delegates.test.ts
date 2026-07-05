@@ -80,7 +80,7 @@ function fakeAdapter(opts: {
     ...opts.result,
   });
   return {
-    id: "ruflo",
+    id: "local",
     async checkAvailability(): Promise<ProviderAdapterStatus> {
       return opts.status ?? { status: "available" };
     },
@@ -166,69 +166,7 @@ describe("synchronous status mapping", () => {
   });
 });
 
-// ── Agentic (Ruflo workflow) honest status ────────────────────────────────────
 
-describe("agentic delegate honest status", () => {
-  it("SUBMITTED workflow state ↛ COMPLETED; preserves externalExecutionId", async () => {
-    const adapter = fakeAdapter({
-      result: { success: false, output: "[SUBMITTED] ...", artifacts: ["ruflo:workflow:wf-123:submitted"] },
-    });
-    const delegate = new AgenticProviderDelegate("ruflo", adapter);
-
-    const res = await delegate.execute(req("implement"));
-
-    expect(res.status).toBe("SUBMITTED");
-    expect(res.status).not.toBe("COMPLETED");
-    expect(res.externalExecutionId).toBe("wf-123");
-  });
-
-  it("RUNNING workflow state ↛ COMPLETED", async () => {
-    const adapter = fakeAdapter({
-      result: { success: false, artifacts: ["ruflo:workflow:wf-9:running"] },
-    });
-    const delegate = new AgenticProviderDelegate("ruflo", adapter);
-    expect((await delegate.execute(req("implement"))).status).toBe("RUNNING");
-  });
-
-  it("stuck workflow (unknown) → UNSUPPORTED, never COMPLETED", async () => {
-    const adapter = fakeAdapter({
-      result: { success: false, artifacts: ["ruflo:workflow:wf-7:unknown"] },
-    });
-    const delegate = new AgenticProviderDelegate("ruflo", adapter);
-    const res = await delegate.execute(req("implement"));
-    expect(res.status).toBe("UNSUPPORTED");
-    expect(res.status).not.toBe("COMPLETED");
-  });
-
-  it("timeout → TIMEOUT, not generic FAILED", async () => {
-    const adapter = fakeAdapter({
-      result: { success: false, artifacts: ["ruflo:workflow:wf-5:timeout"] },
-    });
-    const delegate = new AgenticProviderDelegate("ruflo", adapter);
-    const res = await delegate.execute(req("implement"));
-    expect(res.status).toBe("TIMEOUT");
-    expect(res.status).not.toBe("FAILED");
-  });
-
-  it("completed terminal state → COMPLETED", async () => {
-    const adapter = fakeAdapter({
-      result: { success: true, output: "real result", artifacts: ["ruflo:workflow:wf-1:completed"] },
-    });
-    const delegate = new AgenticProviderDelegate("ruflo", adapter);
-    expect((await delegate.execute(req("implement"))).status).toBe("COMPLETED");
-  });
-
-  it("unsupported operation → UNSUPPORTED without calling adapter.execute()", async () => {
-    const executeSpy = vi.fn();
-    const adapter = fakeAdapter({ executeSpy });
-    const delegate = new AgenticProviderDelegate("ruflo", adapter);
-
-    const res = await delegate.execute(req("memory.store"));
-
-    expect(res.status).toBe("UNSUPPORTED");
-    expect(executeSpy).not.toHaveBeenCalled();
-  });
-});
 
 // ── Context7 (real MCP probe with injected deps) ─────────────────────────────
 
@@ -335,13 +273,7 @@ describe("capability declarations", () => {
     expect(allowlistFor("awesomeCopilot")).not.toContain("implement");
     expect(allowlistFor("local")).toHaveLength(0);
   });
-
-  it("ruflo capabilities are async (synchronous=false)", () => {
-    expect(capabilitiesFor("ruflo").every((c) => c.synchronous === false)).toBe(true);
-  });
 });
-
-// ── Portable references ───────────────────────────────────────────────────────
 
 describe("portable references", () => {
   it("ABSOLUTE_PATH detects machine paths", () => {
@@ -349,20 +281,6 @@ describe("portable references", () => {
     expect(ABSOLUTE_PATH.test("/home/x")).toBe(true);
     expect(ABSOLUTE_PATH.test("awesome-copilot:skill:x")).toBe(false);
     expect(ABSOLUTE_PATH.test("vendor/awesome-copilot/skills/x/SKILL.md")).toBe(false);
-  });
-
-  it("agentic delegate strips absolute artifacts and keeps logical refs", async () => {
-    const adapter = fakeAdapter({
-      result: {
-        success: true,
-        artifacts: ["ruflo:workflow:wf-1:completed", "D:\\Adrian\\should-be-dropped"],
-      },
-    });
-    const delegate = new AgenticProviderDelegate("ruflo", adapter);
-    const res = await delegate.execute(req("implement"));
-
-    expect(res.artifacts).toContain("ruflo:workflow:wf-1:completed");
-    expect(res.artifacts?.some((a) => ABSOLUTE_PATH.test(a))).toBe(false);
   });
 });
 

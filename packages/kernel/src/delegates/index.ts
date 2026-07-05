@@ -1,4 +1,3 @@
-import { RufloProvider } from "@gru/provider-ruflo";
 import { EccProvider } from "@gru/provider-ecc";
 import { GentlePiProvider } from "@gru/provider-gentle-pi";
 import { GentlemanCliProvider } from "@gru/provider-gentleman-cli";
@@ -7,7 +6,6 @@ import { EngramProvider } from "@gru/provider-engram";
 import { LocalProvider } from "@gru/provider-local";
 
 import type { DelegationProviderId, ProviderDelegate } from "../../../shared/src/ports/delegation.js";
-import { RufloProviderAdapter } from "../adapters/ruflo.js";
 import { SimpleProviderDelegate, AgenticProviderDelegate } from "./base.js";
 import { AwesomeCopilotDelegate } from "./awesome-copilot.js";
 import { Context7Delegate } from "./context7.js";
@@ -33,7 +31,6 @@ export function createDelegationRegistry(): DefaultDelegationRegistry {
   const add = (id: DelegationProviderId, delegate: ProviderDelegate) =>
     registry.register({ id, delegate, capabilities: flagsFor(id) });
 
-  add("ruflo", new AgenticProviderDelegate("ruflo", new RufloProviderAdapter()));
   add("ecc", new SimpleProviderDelegate("ecc", new EccProvider()));
   add("gentlePi", new SimpleProviderDelegate("gentlePi", new GentlePiProvider()));
   add("gentlemanCli", new SimpleProviderDelegate("gentlemanCli", new GentlemanCliProvider()));

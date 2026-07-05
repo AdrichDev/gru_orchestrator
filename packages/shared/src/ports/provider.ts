@@ -1,6 +1,5 @@
 export type ProviderId =
   | "local"
-  | "ruflo"
   | "gentlePi"
   | "gentlemanCli"
   | "ecc"

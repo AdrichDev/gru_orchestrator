@@ -96,7 +96,7 @@ They do NOT govern artifacts you produce:
 **You can**: query Engram, activate MCPs, choose Providers, evaluate risk, request approvals,
 record decisions, reclassify tasks based on Filesystem Scan.
 
-**You cannot** (delegate these to local provider or ruflo): implement/edit product files,
+**You cannot** (delegate these to local provider or ecc): implement/edit product files,
 commit/push to main without review, deploy to production, make irreversible architectural
 decisions without user approval.
 
@@ -241,8 +241,8 @@ impact, repo has tests and reusable components.
 | 0 | Trivial | local |
 | 1 | Small | local, devilsAdvocate/caveman |
 | 2 | Medium | local, gentlePi/gentlemanCli, devilsAdvocate, engram |
-| 3 | Large | local, gentlePi, devilsAdvocate, local/ruflo, ecc, engram |
-| 4 | Critical | local, gentlePi, devilsAdvocate, ruflo, human-approval, ecc, engram |
+| 3 | Large | local, gentlePi, devilsAdvocate, local/GGA, ecc, engram |
+| 4 | Critical | local, gentlePi, devilsAdvocate, GGA, human-approval, ecc, engram |
 
 → full provider sequences per level: `docs/harness-reference.md#workflow-sequences`
 
@@ -252,7 +252,7 @@ impact, repo has tests and reusable components.
 
 → full catalog with commands and roles: `docs/harness-reference.md#providers-catalog`
 
-Short reference: `local` | `ruflo` | `gentlePi` | `gentlemanCli` | `ecc` | `deepagents` |
+Short reference: `local` | `gentlePi` | `gentlemanCli` | `ecc` | `deepagents` |
 `engram` | `awesomeCopilot`
 
 → provider protocol: `docs/harness-reference.md#provider-protocol`
@@ -314,7 +314,6 @@ Before classifying                      → prior decisions (given graphify insi
 Before invoking architect               → prior architectural decisions + graphify nodes
 Before invoking spec                    → prior specs (cross-ref with graphify modules)
 Before repeating a solution             → check if solved before (now knowing graphify state)
-Before Ruflo CONSULT                    → accumulated project context + graphify reality
 ```
 
 **Rule**: Never query Engram without first loading graphify. Context without code state = incomplete.
@@ -411,7 +410,7 @@ Al terminar CADA ítem del scope → generar resumen caveman → guardar en Engr
 ```text
 SCOPE [nombre-sdd] DONE.
 NIVEL: [0-4] — [Trivial|Small|Medium|Large|Critical].
-PROVIDERS: [local, engram, gentlePi, ruflo, ecc, context7, awesomeCopilot, ...].
+PROVIDERS: [local, engram, gentlePi, ecc, context7, awesomeCopilot, ...].
 PROCEDURE: [paso1 → paso2 → paso3].
 FILES: [N new | M modified].
 TESTS: [N new — all green].
@@ -482,6 +481,6 @@ PURPLE (purpleteam-coordinator — drives cyclic loop + persists learnings).
 
 > Full strict runtime behavior rules: → see STRICT_PROVIDER_RUNTIME.md
 
-Guardrails: provider selection follows level routing (never skip levels); Ruflo is CONSULT
-by default (DELEGATE requires explicit activation); providers report availability before
-invocation; on provider failure: block task, report error, do not silently fallback.
+Guardrails: provider selection follows level routing (never skip levels); Ruflo is disabled;
+providers report availability before invocation; on provider failure: block task, report error,
+do not silently fallback.
