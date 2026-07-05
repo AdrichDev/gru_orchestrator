@@ -182,8 +182,7 @@ Gold rule: Inflates context? → Delegate.
 
 ## RUFLO ESCALATION CONDITIONS
 
-* Activate if: Level 4, Architect/Devil mismatch, high uncertainty, parallel execution needed.
-* Modes: `OFF` | `CONSULT` | `DELEGATE` | `AUTO`. Ruflo is advisory, Gru decides.
+* Deprecated. Replaced by ECC. Ruflo execution is disabled.
 
 ---
 
@@ -221,7 +220,7 @@ Gold rule: Inflates context? → Delegate.
 * Commit/Push → Mandatory reviewer.
 * Critical changes → Devil + human approval.
 * Library doubts → Context7.
-* Extreme complexity   → Ruflo.
+* Extreme complexity   → ECC.
 
 ---
 
@@ -292,5 +291,5 @@ DECISION: [architecture or "none"]
 ## STRICT PROVIDER RUNTIME
 
 * Provider selection by level is mandatory.
-* Ruflo disabled (direct delegation).
+* Ruflo is deprecated and disabled. Direct delegation applied.
 * Availability check required. On failure: Block, no silent fallback.
