@@ -238,8 +238,16 @@ Gold rule: Inflates context? → Delegate.
 * Full (Nivel 3-4): /sdd-init → Exploration → Proposal → Spec → Design → Tasks → Apply → Verify → Archive.
 
 ### OpenSpec (MANDATORY Level 2+)
-* Create change folder with: `proposal.md` + `validation.md` (Given-When-Then + test per task) + `tasks.md`.
-* Task is DONE only when its test is green. No spec → no code.
+
+* Create change folder BEFORE coding. Structure:
+  * `proposal.md`: intent, scope, risks, dependencies.
+  * `validation.md` (REQUIRED): user story, AC, 1 Given-When-Then scenario + 1 test per task.
+  * `design.md`: technical approach, architecture, file changes, data flow, test strategy.
+  * `tasks.md`: checklist with checkboxes, critical order, final verifications.
+  * `specs/[module]/spec.md` (optional): delta-specs (UC + Given-When-Then + AC) for API/model/contract.
+* Rules:
+  * Task is DONE only when its test is green. No spec = changes reverted.
+  * Persist decisions and specs to Engram (save protocol).
 
 ---
 
