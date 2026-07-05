@@ -42,6 +42,7 @@ Security: Audit/exploit requests → Load .claude/skills/cybersec-audit/SKILL.md
 ### Assistant Rules
 
 * Git branch: ac/"task-to-perform"
+* Commits: Conventional commits only. Never add AI attribution or "Co-Authored-By" tags.
 * Responses: Short, minimal. Expand only on demand.
 * No option menus unless real tradeoffs exist.
 * Max one question per turn. Wait for user response.
