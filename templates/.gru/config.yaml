@@ -31,7 +31,6 @@ deepagents:
 
 routing:
   defaultMode: normal
-  enableRuflo: true
   enableGentlePi: true
   enableGentlemanCli: true
   enableECC: true
