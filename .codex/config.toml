@@ -1,5 +1,6 @@
-model_instructions_file = "D:\\Adrian\\10. IA\\Gru-Orchestrator\\.codex\\engram-instructions.md"
-experimental_compact_prompt_file = "D:\\Adrian\\10. IA\\Gru-Orchestrator\\.codex\\engram-compact-prompt.md"
+model_instructions_file = 'D:\Adrian\10. IA\Gru-Orchestrator\.codex\engram-instructions.md'
+experimental_compact_prompt_file = 'D:\Adrian\10. IA\Gru-Orchestrator\.codex\engram-compact-prompt.md'
+
 [features]
 multi_agent = true
 
@@ -9,4 +10,16 @@ max_threads = 4
 
 [mcp_servers.engram]
 command = "engram"
-args = ["mcp", "--tools=agent"]
+args = [
+    "mcp",
+    "--tools=agent",
+]
+
+[mcp_servers.context7]
+command = "npx"
+args = [
+    "-y",
+    "--package=@upstash/context7-mcp@2.2.5",
+    "--",
+    "context7-mcp",
+]
