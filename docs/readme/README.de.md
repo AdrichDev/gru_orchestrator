@@ -24,7 +24,7 @@
 
 ## 🧠 Was ist Gru Harness?
 
-Gru ist ein **LLM-Orchestrator-Harness**: eine Koordinationsschicht, die die Entscheidungsfindung zentralisiert, das Risiko jeder Aufgabe bewertet und die Ausführung an spezialisierte Provider delegiert (Ruflo, Gentle-Pi, ECC, Engram, Awesome Copilot…). Er läuft innerhalb von Claude Code, Codex, Gemini CLI, OpenCode, Cursor oder Antigravity — oder eigenständig über die `gru`-CLI.
+Gru ist ein **LLM-Orchestrator-Harness**: eine Koordinationsschicht, die die Entscheidungsfindung zentralisiert, das Risiko jeder Aufgabe bewertet und die Ausführung an spezialisierte Provider delegiert (Gentle-Pi, ECC, Engram, Awesome Copilot…). Er läuft innerhalb von Claude Code, Codex, Gemini CLI, OpenCode, Cursor oder Antigravity — oder eigenständig über die `gru`-CLI.
 
 ### Grundprinzipien
 
@@ -40,7 +40,7 @@ Gru ist ein **LLM-Orchestrator-Harness**: eine Koordinationsschicht, die die Ent
 Zwei verschiedene Konzepte, **nicht** austauschbar:
 
 * **Minion** — eine delegierte *Rolle* (builder, reviewer, architect, tester, security, devil, pm, docs, filesystem, context7, memory, mcp). Es ist die **Arbeitseinheit**, die Gru delegiert. 13 Rollen, jede mit einer einzigen Verantwortung.
-* **Provider** — ein Ausführungs-*Backend* (`local`, `ruflo`, `gentlePi`, `gentlemanCli`, `ecc`, `deepagents`, `engram`, `awesomeCopilot`). Es ist die **Laufzeit**, die die Arbeit des Minions ausführt.
+* **Provider** — ein Ausführungs-*Backend* (`local`, `gentlePi`, `gentlemanCli`, `ecc`, `deepagents`, `engram`, `awesomeCopilot`). Es ist die **Laufzeit**, die die Arbeit des Minions ausführt.
 
 > Ein Minion ist eine ROLLE. Ein Provider ist ein BACKEND. Gru wählt beide je nach Stufe und Aufgabentyp.
 
@@ -56,7 +56,7 @@ Gru bewertet jede Aufgabe (Komplexität + Risiko) und klassifiziert sie vor dem 
 | **1** | Klein | `local` + devil/caveman |
 | **2** | Mittel | leichter architect → mini-spec → builder → tester → reviewer |
 | **3** | Groß | architect → devil → spec → builder pro Einheit → tester → security → reviewer |
-| **4** | Kritisch | + Ruflo CONSULT + **menschliche Freigabe** + unabhängiger reviewer |
+| **4** | Kritisch | + **menschliche Freigabe** + unabhängiger reviewer |
 
 Der **Filesystem Scan** ist vor jeder Klassifizierung verpflichtend. Repo-Belege können die Stufe anheben, niemals ohne Beleg senken.
 
@@ -97,7 +97,7 @@ Aufgabe **nicht ausgeführt**: Sie endet mit Exit-Code 2 — sie simuliert nie.
 
 ## 🔌 Provider
 
-Gru delegiert an spezialisierte Provider: `local`, `ruflo`, `gentlePi`, `gentlemanCli`,
+Gru delegiert an spezialisierte Provider: `local`, `gentlePi`, `gentlemanCli`,
 `ecc`, `deepagents`, `engram` und `awesomeCopilot` (Nur-Such-Katalog). Unter der strikten
 Laufzeit blockiert ein fehlender Provider die Aufgabe mit seinem Installationshinweis —
 kein stilles Fallback.

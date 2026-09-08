@@ -201,7 +201,7 @@ export function normalizeExecutionResult(
   };
 }
 
-/** Façade over the agentic `ProviderAdapter` contract (e.g. Ruflo workflows). */
+/** Façade over the agentic `ProviderAdapter` contract (workflow lifecycle). */
 export class AgenticProviderDelegate implements ProviderDelegate {
   constructor(
     readonly id: DelegationProviderId,

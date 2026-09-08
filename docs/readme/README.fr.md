@@ -24,7 +24,7 @@
 
 ## 🧠 Qu'est-ce que Gru Harness ?
 
-Gru est un **harness orchestrateur de LLM** : une couche de coordination qui centralise la prise de décision, évalue le risque de chaque tâche et délègue l'exécution à des providers spécialisés (Ruflo, Gentle-Pi, ECC, Engram, Awesome Copilot…). Il s'exécute dans Claude Code, Codex, Gemini CLI, OpenCode, Cursor ou Antigravity — ou en autonome via la CLI `gru`.
+Gru est un **harness orchestrateur de LLM** : une couche de coordination qui centralise la prise de décision, évalue le risque de chaque tâche et délègue l'exécution à des providers spécialisés (Gentle-Pi, ECC, Engram, Awesome Copilot…). Il s'exécute dans Claude Code, Codex, Gemini CLI, OpenCode, Cursor ou Antigravity — ou en autonome via la CLI `gru`.
 
 ### Principes fondamentaux
 
@@ -40,7 +40,7 @@ Gru est un **harness orchestrateur de LLM** : une couche de coordination qui cen
 Deux concepts distincts, **non** interchangeables :
 
 * **Minion** — un *rôle* délégué (builder, reviewer, architect, tester, security, devil, pm, docs, filesystem, context7, memory, mcp). C'est l'**unité de travail** que Gru délègue. 13 rôles, chacun avec une responsabilité unique.
-* **Provider** — un *backend* d'exécution (`local`, `ruflo`, `gentlePi`, `gentlemanCli`, `ecc`, `deepagents`, `engram`, `awesomeCopilot`). C'est le **runtime** qui exécute le travail du Minion.
+* **Provider** — un *backend* d'exécution (`local`, `gentlePi`, `gentlemanCli`, `ecc`, `deepagents`, `engram`, `awesomeCopilot`). C'est le **runtime** qui exécute le travail du Minion.
 
 > Un Minion est un RÔLE. Un Provider est un BACKEND. Gru choisit les deux selon le niveau et le type de tâche.
 
@@ -56,7 +56,7 @@ Gru note chaque tâche (complexité + risque) et la classe avant d'agir :
 | **1** | Petite | `local` + devil/caveman |
 | **2** | Moyenne | architect léger → mini-spec → builder → tester → reviewer |
 | **3** | Grande | architect → devil → spec → builder par unité → tester → security → reviewer |
-| **4** | Critique | + Ruflo CONSULT + **approbation humaine** + reviewer indépendant |
+| **4** | Critique | + **approbation humaine** + reviewer indépendant |
 
 Le **Filesystem Scan** est obligatoire avant toute classification. Les preuves du dépôt peuvent élever le niveau, jamais le baisser sans preuve.
 
@@ -96,7 +96,7 @@ code de sortie et présence d'une approbation humaine). En CI / non-TTY, une tâ
 
 ## 🔌 Providers
 
-Gru délègue à des providers spécialisés : `local`, `ruflo`, `gentlePi`, `gentlemanCli`,
+Gru délègue à des providers spécialisés : `local`, `gentlePi`, `gentlemanCli`,
 `ecc`, `deepagents`, `engram` et `awesomeCopilot` (catalogue en recherche seule). Sous le
 runtime strict, un provider absent bloque la tâche avec son indication d'installation —
 sans repli silencieux.

@@ -159,15 +159,15 @@ describe("SEC-05 — loadConfig falls back to defaults on malformed YAML", () =>
     // Write a config.yaml with a routing flag set to a non-boolean string
     fs.writeFileSync(
       path.join(gruDir, "config.yaml"),
-      'project:\n  name: test\nrouting:\n  enableRuflo: "yes"\n'
+      'project:\n  name: test\nrouting:\n  enableGentlePi: "yes"\n'
     );
 
     const { loadConfig } = await import("../../orchestrator/config.js");
     const { config } = loadConfig();
 
-    // Must fall back: enableRuflo should be the default (true, a boolean)
-    expect(typeof config.routing.enableRuflo).toBe("boolean");
-    expect(config.routing.enableRuflo).toBe(true);
+    // Must fall back: enableGentlePi should be the default (true, a boolean)
+    expect(typeof config.routing.enableGentlePi).toBe("boolean");
+    expect(config.routing.enableGentlePi).toBe(true);
   });
 
   it("routing as non-object (array) → falls back to defaults", async () => {
@@ -181,7 +181,7 @@ describe("SEC-05 — loadConfig falls back to defaults on malformed YAML", () =>
     const { config } = loadConfig();
 
     // Must fall back to defaults — routing must be an object with boolean flags
-    expect(typeof config.routing.enableRuflo).toBe("boolean");
+    expect(typeof config.routing.enableGentlePi).toBe("boolean");
   });
 
   it("providers entry as a non-object (string) → falls back to defaults", async () => {
@@ -202,7 +202,7 @@ describe("SEC-05 — loadConfig falls back to defaults on malformed YAML", () =>
     const gruDir = path.join(tmpDir, ".gru");
     fs.writeFileSync(
       path.join(gruDir, "config.yaml"),
-      "project:\n  name: my-project\nrouting:\n  enableRuflo: false\n  enableEngram: true\n"
+      "project:\n  name: my-project\nrouting:\n  enableGentlePi: false\n  enableEngram: true\n"
     );
 
     const { loadConfig } = await import("../../orchestrator/config.js");
@@ -210,7 +210,7 @@ describe("SEC-05 — loadConfig falls back to defaults on malformed YAML", () =>
 
     // Valid config must be used as-is
     expect(config.project.name).toBe("my-project");
-    expect(config.routing.enableRuflo).toBe(false);
+    expect(config.routing.enableGentlePi).toBe(false);
     expect(config.routing.enableEngram).toBe(true);
   });
 });

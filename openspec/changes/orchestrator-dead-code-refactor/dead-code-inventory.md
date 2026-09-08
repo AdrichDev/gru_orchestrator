@@ -38,13 +38,11 @@ Active source files found (excludes `node_modules/`, `vendor/`, `runs/`, `dist/`
 - `packages/kernel/src/adapters/__tests__/awesome-copilot.test.ts`
 - `packages/kernel/src/adapters/__tests__/pipeline.integration.test.ts`
 - `packages/kernel/src/adapters/__tests__/resolver.test.ts`
-- `packages/kernel/src/adapters/__tests__/ruflo.test.ts`
 - `packages/kernel/src/adapters/__tests__/supervision.test.ts`
 - `packages/kernel/src/adapters/awesome-copilot.ts`
 - `packages/kernel/src/adapters/registry-agentic.ts`
 - `packages/kernel/src/adapters/registry.ts`
 - `packages/kernel/src/adapters/resolver.ts`
-- `packages/kernel/src/adapters/ruflo.ts`
 - `packages/kernel/src/adapters/supervision.ts`
 - `packages/kernel/src/delegates/__tests__/delegates.test.ts`
 - `packages/kernel/src/delegates/awesome-copilot.ts`
@@ -67,7 +65,6 @@ Active source files found (excludes `node_modules/`, `vendor/`, `runs/`, `dist/`
 - `packages/providers/gentle-pi/src/index.ts`
 - `packages/providers/gentleman-cli/src/index.ts`
 - `packages/providers/local/src/index.ts`
-- `packages/providers/ruflo/src/index.ts`
 
 **Shared:**
 - `packages/shared/src/ports/agent.ts`
@@ -132,7 +129,6 @@ Test Files  4 failed | 7 passed (11)
 - `packages/kernel/src/adapters/__tests__/awesome-copilot.test.ts`
 - `packages/kernel/src/adapters/__tests__/pipeline.integration.test.ts`
 - `packages/kernel/src/adapters/__tests__/resolver.test.ts`
-- `packages/kernel/src/adapters/__tests__/ruflo.test.ts`
 - `packages/kernel/src/adapters/__tests__/supervision.test.ts`
 - `packages/kernel/src/delegates/__tests__/delegates.test.ts`
 - `packages/kernel/src/gates/__tests__/gates.test.ts`
@@ -182,7 +178,6 @@ Both commands run via `tsx apps/cli/src/index.ts` and produce identical provider
 
 | Provider | Kind | Estado |
 |----------|------|--------|
-| `ruflo` | cli | READY |
 | `gentlePi` | cli | READY |
 | `gentlemanCli` | cli | MISSING (binary not installed) |
 | `ecc` | cli | READY |

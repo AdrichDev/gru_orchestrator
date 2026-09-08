@@ -24,7 +24,7 @@
 
 ## 🧠 What is Gru Harness?
 
-Gru is an **LLM orchestrator harness**: a coordination layer that centralizes decision-making, scores the risk of every task, and delegates execution to specialized providers (Ruflo, Gentle-Pi, ECC, Engram, Awesome Copilot…). It runs inside Claude Code, Codex, Gemini CLI, OpenCode, Cursor, or Antigravity — or standalone via the `gru` CLI.
+Gru is an **LLM orchestrator harness**: a coordination layer that centralizes decision-making, scores the risk of every task, and delegates execution to specialized providers (Gentle-Pi, ECC, Engram, Awesome Copilot…). It runs inside Claude Code, Codex, Gemini CLI, OpenCode, Cursor, or Antigravity — or standalone via the `gru` CLI.
 
 ### Core principles
 
@@ -40,7 +40,7 @@ Gru is an **LLM orchestrator harness**: a coordination layer that centralizes de
 Two distinct concepts, **not** interchangeable:
 
 * **Minion** — a delegated *role* (builder, reviewer, architect, tester, security, devil, pm, docs, filesystem, context7, memory, mcp). It is the **unit of work** Gru delegates. 13 roles, each with a single responsibility.
-* **Provider** — an execution *backend* (`local`, `ruflo`, `gentlePi`, `gentlemanCli`, `ecc`, `deepagents`, `engram`, `awesomeCopilot`). It is the **runtime** that carries out the Minion's work.
+* **Provider** — an execution *backend* (`local`, `gentlePi`, `gentlemanCli`, `ecc`, `deepagents`, `engram`, `awesomeCopilot`). It is the **runtime** that carries out the Minion's work.
 
 > A Minion is a ROLE. A Provider is a BACKEND. Gru picks both based on level and task type.
 
@@ -56,7 +56,7 @@ Gru scores every task (complexity + risk) and classifies it before acting:
 | **1** | Small | `local` + devil/caveman |
 | **2** | Medium | light architect → mini-spec → builder → tester → reviewer |
 | **3** | Large | architect → devil → spec → builder per unit → tester → security → reviewer |
-| **4** | Critical | + Ruflo CONSULT + **human approval** + independent reviewer |
+| **4** | Critical | + **human approval** + independent reviewer |
 
 The **Filesystem Scan** is mandatory before classifying. Repo evidence can raise the level, never lower it without proof.
 
@@ -96,7 +96,7 @@ exits with code 2 — it never simulates.
 
 ## 🔌 Providers
 
-Gru delegates to specialized providers: `local`, `ruflo`, `gentlePi`, `gentlemanCli`,
+Gru delegates to specialized providers: `local`, `gentlePi`, `gentlemanCli`,
 `ecc`, `deepagents`, `engram`, and `awesomeCopilot` (search-only catalog). Under the strict
 runtime, a missing provider blocks the task with its install hint — no silent fallback.
 

@@ -49,7 +49,6 @@ cada uno con su repositorio y licencia:
 | gentle-pi | SDD/OpenSpec + TDD | https://www.npmjs.com/package/gentle-pi |
 | gentle-ai | diagnóstico de entorno y skills | https://github.com/Gentleman-Programming/gentle-ai |
 | engram (gentle-engram) | memoria persistente | https://www.npmjs.com/package/gentle-engram |
-| ruflo | orquestador multi-agente (MCP) | https://www.npmjs.com/package/ruflo |
 | ecc (ecc-universal) | auditoría de seguridad / CVEs | https://www.npmjs.com/package/ecc-universal |
 | awesome-copilot | catálogo de skills (solo lectura) | https://github.com/github/awesome-copilot |
 | context7 | documentación técnica (MCP) | https://github.com/upstash/context7 |

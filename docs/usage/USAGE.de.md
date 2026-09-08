@@ -121,7 +121,7 @@ Orchestriert eine Aufgabe von Anfang bis Ende:
 ```text
 1. classifyTask()      → Level 0-4 + Risikosignale (zweisprachig ES/EN)
 2. Freigabe-Gate       → bei Risiko: „Ausführung freigeben? (ja/NEIN)"
-3. routeTask()         → wählt den Provider per Keywords (ruflo, gentlePi, ecc, engram...)
+3. routeTask()         → wählt den Provider per Keywords (gentlePi, ecc, engram...)
 4. Devil's Advocate    → Pre-Flight-Veto (Provider fehlt, Katalog als Executor)
 5. Echter Health-Check → wenn der Provider nicht installiert ist: BLOCKED + wie installieren
 6. Echte Ausführung    → Ergebnis + auditierbares Log in runs/run_*.json
@@ -222,7 +222,7 @@ dedupliziert (nur einmal geschrieben). Mit `--scope global` werden die als proje
 markierten Dateien (Verträge, `.mcp.json`, Runtime-Dateien) nicht geschrieben; nur die
 gemeinsamen `.gru/*` werden nach `~/.gru/` angelegt.
 
-`.mcp.json` registriert die MCP-Server für **claude-flow/ruflo**, **context7** und
+`.mcp.json` registriert die MCP-Server für **context7** und
 **engram**. Passe `ENGRAM_BIN` an deinen lokalen Pfad an.
 
 ---
@@ -234,7 +234,6 @@ Gru produziert keine Artefakte: es delegiert an spezialisierte Provider. Der Kat
 | Provider ID | Executable / Befehl | Rolle | Extern | Installationshinweis |
 | :--- | :--- | :--- | :--- | :--- |
 | **local** | direkter Befehl | Lokale Workspace-Aufgaben (filesystem, git, npm, tests). | nein | — |
-| **ruflo** | `ruflo` | Multi-Agent-Orchestrator für komplexe Aufgaben und parallele Swarms. | ja | `pnpm dlx ruflo@latest init wizard` |
 | **gentlePi** | `gentle-ai`/`pi` | SDD/OpenSpec-Spezifikation und diszipliniertes TDD. | ja | `pi install npm:gentle-pi` (benötigt `pi`) |
 | **gentlemanCli** | `gentle-ai` | Umgebungsdiagnose, Skill-Updates und Sync. | ja | offizieller Installer (macOS/Linux); Windows: manuell oder WSL |
 | **ecc** | `ecc` | Sicherheitsaudit, Policies und CVE-Erkennung. | ja | `pnpm add -D ecc-universal` |
@@ -257,7 +256,6 @@ passende `SKILL.md`** — es führt den Katalog nie als Provider aus.
 | `merke dir, dass wir JWT ohne Sessions verwenden` | 0 | nein | engram |
 | `suche im Katalog eine Code-Review-Skill` | 0 | nein | awesomeCopilot |
 | `auditiere die Sicherheit und prüfe CVEs` | 2 | **ja** | ecc |
-| `nutze einen Multi-Agent-Swarm für das Payments-Feature` | 1 | **ja** (Kosten) | ruflo |
 | `lösche die Produktionsdatenbank` | 4 | **ja** | blockiert ohne Freigabe |
 
 ---
@@ -331,8 +329,8 @@ klassifiziert. Jedes Level definiert, welche Provider/Rollen beteiligt sind:
 Level 0  local
 Level 1  local → leichte Validierung
 Level 2  scan → gentlePi (mini-spec) → local → tests → devil → engram
-Level 3  scan → gentlePi (SDD) → devil → local/ruflo → tests → ecc → engram
-Level 4  alles oben + Ruflo CONSULT + doppelte menschliche Freigabe
+Level 3  scan → gentlePi (SDD) → devil → local → tests → ecc → engram
+Level 4  alles oben + doppelte menschliche Freigabe
 ```
 
 Regeln, die das Harness von selbst anwendet:

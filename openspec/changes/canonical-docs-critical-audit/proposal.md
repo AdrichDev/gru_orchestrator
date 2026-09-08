@@ -11,7 +11,7 @@ auditoría — con hallazgos reales, no una promesa de revisarlo "algún día".
 ### F1 — Duplicación de kernel en 4+ archivos, solo 3 sincronizados correctamente
 
 Existen al menos estas copias del mismo "kernel Gru" (Bootstrap, Identity, Decision Table,
-Workflows, Minion Contract, Ruflo, Memory, Guardrails, SDD, Project Intake, Scope Summary):
+Workflows, Minion Contract, Memory, Guardrails, SDD, Project Intake, Scope Summary):
 
 1. `~/.claude/CLAUDE.md` (global del usuario, fuera del repo)
 2. `CLAUDE.md` (raíz del proyecto) — 500 líneas

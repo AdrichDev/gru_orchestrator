@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Claude Flow Hook Handler (Cross-Platform)
+ * Hook Handler (Cross-Platform)
  * Dispatches hook events to the appropriate helper modules.
  *
  * Usage: node hook-handler.cjs <command> [args...]

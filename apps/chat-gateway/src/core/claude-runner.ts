@@ -10,7 +10,7 @@ import type { OrchestrateFn } from "./intake.js";
  * executed exactly as if the admin had typed it into Claude Code here.
  *
  * Why this instead of the kernel's orchestrateTask: orchestrateTask routes to
- * third-party provider CLIs (gentle-pi/ecc/ruflo), which Anthropic bills as
+ * third-party provider CLIs (gentle-pi/ecc), which Anthropic bills as
  * third-party "extra usage" rather than against the Claude plan. The `claude`
  * CLI is first-party and runs within the user's Claude Code plan.
  */

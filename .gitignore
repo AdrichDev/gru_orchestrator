@@ -19,14 +19,10 @@ runs/
 npm-debug.log*
 pnpm-debug.log*
 
-# Claude-flow / swarm runtime state (generated, machine-specific)
+# Local runtime state left behind by dropped/removed tools (generated, machine-specific)
 .swarm/
-.claude-flow/agents/
-.claude-flow/workflows/
-.claude-flow/daemon-state.json
-.claude-flow/daemon.pid
-.claude-flow/metrics/codebase-map.json
-.claude-flow/metrics/security-audit.json
+.claude-flow/
+.hive-mind/
 
 # OS
 .DS_Store
@@ -46,3 +42,6 @@ coverage/
 # Local Pi runtime state
 .atl/
 .pi/
+
+# Local skills mirror (regenerated, not part of the repo)
+.agents/

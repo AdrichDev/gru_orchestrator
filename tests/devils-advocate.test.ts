@@ -60,15 +60,15 @@ describe("devil's advocate — delegation review", () => {
 
   test("Devil bloquea providers no disponibles — nunca se simula", () => {
     const availability: ProviderAvailability = {
-      providerId: "ruflo",
+      providerId: "gentlePi",
       available: false,
       status: "missing",
       reason: "binario no encontrado",
     };
     const finding = reviewDelegation({
       prompt: "usa swarm para esta tarea",
-      providerId: "ruflo",
-      decision: { ...decision, provider: "ruflo" },
+      providerId: "gentlePi",
+      decision: { ...decision, provider: "gentlePi" },
       availability,
     });
 
@@ -256,9 +256,9 @@ describe("devil's advocate — rigidity levels", () => {
       test(`provider unavailable → blocked at level '${level}'`, () => {
         const finding = reviewDelegation({
           prompt: "haz algo",
-          providerId: "ruflo",
-          decision: { ...decision, provider: "ruflo", confidence: 100 },
-          availability: { providerId: "ruflo", available: false, status: "missing", reason: "not found" },
+          providerId: "gentlePi",
+          decision: { ...decision, provider: "gentlePi", confidence: 100 },
+          availability: { providerId: "gentlePi", available: false, status: "missing", reason: "not found" },
           rigidity: level,
         });
         expect(finding.blocked).toBe(true);

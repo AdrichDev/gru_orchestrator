@@ -138,17 +138,17 @@ describe("GruIntakeAdapter — destructive double-confirm", () => {
 describe("GruIntakeAdapter — provider error forwarding", () => {
   it("forwards a ProviderUnavailableError verbatim", async () => {
     const orchestrate: OrchestrateFn = async () => {
-      throw Object.assign(new Error("Provider 'ruflo' no disponible: x"), {
+      throw Object.assign(new Error("Provider 'gentlePi' no disponible: x"), {
         name: "ProviderUnavailableError",
-        message: "Provider 'ruflo' no disponible: x",
-        installHint: "instala ruflo",
+        message: "Provider 'gentlePi' no disponible: x",
+        installHint: "instala gentlePi",
       });
     };
     const adapter = build(orchestrate);
     await adapter.handle(msg("haz algo"));
     const last = sent[sent.length - 1];
     expect(last).toContain("Provider no disponible");
-    expect(last).toContain("instala ruflo");
+    expect(last).toContain("instala gentlePi");
   });
 });
 

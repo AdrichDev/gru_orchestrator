@@ -82,10 +82,6 @@ const IMPERATIVES: Array<{ id: string; anchor: string }> = [
     anchor: "## MEMORY WITH ENGRAM — CONSULT/SAVE TRIGGERS",
   },
   {
-    id: "R5-13 RUFLO ESCALATION CONDITIONS",
-    anchor: "## RUFLO ESCALATION CONDITIONS",
-  },
-  {
     id: "R5-14 CYBERSEC ACTIVATION + LOOP",
     anchor: "RECON → EXPLOIT → ASSESS → HARDEN → DETECT → REAUDIT → LEARN",
   },

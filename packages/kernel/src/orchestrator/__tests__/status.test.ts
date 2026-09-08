@@ -34,10 +34,10 @@ describe("isOptionalOrDisabled", () => {
     expect(isOptionalOrDisabled("deepagents" as ProviderId, s, providersConfig)).toBe(true);
   });
 
-  it("returns false for ruflo when status=missing and kind=cli (genuinely required)", () => {
-    const providersConfig = { ruflo: { enabled: true } };
+  it("returns false for gentlePi when status=missing and kind=cli (genuinely required)", () => {
+    const providersConfig = { gentlePi: { enabled: true } };
     const s: Avail = { available: false, status: "missing", kind: "cli" };
-    expect(isOptionalOrDisabled("ruflo" as ProviderId, s, providersConfig)).toBe(false);
+    expect(isOptionalOrDisabled("gentlePi" as ProviderId, s, providersConfig)).toBe(false);
   });
 
   it("returns false for engram when status=missing and no kind (genuinely required)", () => {
@@ -53,9 +53,9 @@ describe("isOptionalOrDisabled", () => {
   });
 
   it("returns false for available providers regardless of config", () => {
-    const providersConfig = { ruflo: { enabled: true } };
+    const providersConfig = { gentlePi: { enabled: true } };
     const s: Avail = { available: true, status: "ready", kind: "cli" };
-    expect(isOptionalOrDisabled("ruflo" as ProviderId, s, providersConfig)).toBe(false);
+    expect(isOptionalOrDisabled("gentlePi" as ProviderId, s, providersConfig)).toBe(false);
   });
 
   it("returns true when provider entry is absent from config but kind=sdk status=adapter-missing", () => {
@@ -76,9 +76,9 @@ describe("formatProviderStatus", () => {
   });
 
   it("returns 'READY' for an available provider", () => {
-    const providersConfig = { ruflo: { enabled: true } };
+    const providersConfig = { gentlePi: { enabled: true } };
     const s: Avail = { available: true, status: "ready", kind: "cli" };
-    expect(formatProviderStatus(s, "ruflo" as ProviderId, providersConfig)).toBe("READY");
+    expect(formatProviderStatus(s, "gentlePi" as ProviderId, providersConfig)).toBe("READY");
   });
 
   it("returns 'CONFIGURADO' for a provider with status=configured", () => {
@@ -106,9 +106,9 @@ describe("formatProviderStatus", () => {
   });
 
   it("returns 'MISSING' for a required CLI provider that is not installed", () => {
-    const providersConfig = { ruflo: { enabled: true } };
+    const providersConfig = { gentlePi: { enabled: true } };
     const s: Avail = { available: false, status: "missing", kind: "cli" };
-    expect(formatProviderStatus(s, "ruflo" as ProviderId, providersConfig)).toBe("MISSING");
+    expect(formatProviderStatus(s, "gentlePi" as ProviderId, providersConfig)).toBe("MISSING");
   });
 
   it("returns 'INCOMPATIBLE' for a provider with status=incompatible", () => {
@@ -118,10 +118,10 @@ describe("formatProviderStatus", () => {
   });
 
   it("NEVER returns READY for an unavailable provider (strict-runtime rule)", () => {
-    const providersConfig = { ruflo: { enabled: true } };
+    const providersConfig = { gentlePi: { enabled: true } };
     const s: Avail = { available: false, status: "ready", kind: "cli" };
     // Even if status says 'ready', if available=false it must NOT return READY
-    const result = formatProviderStatus(s, "ruflo" as ProviderId, providersConfig);
+    const result = formatProviderStatus(s, "gentlePi" as ProviderId, providersConfig);
     expect(result).not.toBe("READY");
   });
 });
@@ -144,13 +144,13 @@ describe("Actions list filtering — disabled/optional excluded, required includ
     const statuses: StatusEntry[] = [
       { providerId: "local" as ProviderId, available: false, status: "missing" },
       { providerId: "deepagents" as ProviderId, available: false, status: "adapter-missing", kind: "sdk" },
-      { providerId: "ruflo" as ProviderId, available: true, status: "ready", kind: "cli" },
+      { providerId: "gentlePi" as ProviderId, available: true, status: "ready", kind: "cli" },
       { providerId: "engram" as ProviderId, available: true, status: "ready" },
     ];
     const providersConfig = {
       local: { enabled: false },
       deepagents: { enabled: true },
-      ruflo: { enabled: true },
+      gentlePi: { enabled: true },
       engram: { enabled: true },
     };
 
@@ -164,22 +164,21 @@ describe("Actions list filtering — disabled/optional excluded, required includ
     const statuses: StatusEntry[] = [
       { providerId: "local" as ProviderId, available: false, status: "missing" },
       { providerId: "deepagents" as ProviderId, available: false, status: "adapter-missing", kind: "sdk" },
-      { providerId: "ruflo" as ProviderId, available: false, status: "missing", kind: "cli" }, // required, missing!
+      { providerId: "gentlePi" as ProviderId, available: false, status: "missing", kind: "cli" }, // required, missing!
     ];
     const providersConfig = {
       local: { enabled: false },
       deepagents: { enabled: true },
-      ruflo: { enabled: true },
+      gentlePi: { enabled: true },
     };
 
     const actions = buildActionsRequired(statuses, providersConfig);
     expect(actions).toHaveLength(1);
-    expect(actions[0].providerId).toBe("ruflo");
+    expect(actions[0].providerId).toBe("gentlePi");
   });
 
   it("empty actions list when all providers are either available, disabled, or optional", () => {
     const statuses: StatusEntry[] = [
-      { providerId: "ruflo" as ProviderId, available: true },
       { providerId: "gentlePi" as ProviderId, available: true },
       { providerId: "gentlemanCli" as ProviderId, available: true },
       { providerId: "ecc" as ProviderId, available: true },

@@ -17,7 +17,7 @@ import type { AgentDescriptor } from "../../../../shared/src/ports/agent.js";
 
 function agent(id: string): AgentDescriptor {
   return {
-    id, provider: "ruflo", sourcePath: "/x", name: id, description: "",
+    id, provider: "local", sourcePath: "/x", name: id, description: "",
     capabilities: [], supportedPhases: [], tools: [], skills: [],
     executionMode: "write", riskLevel: 2, canWrite: true, canReview: false,
     canTest: false, availability: "available",

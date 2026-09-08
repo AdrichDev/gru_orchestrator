@@ -46,7 +46,7 @@ local provider (filesystem scan)
 → 3d: devil re-check — fresh sub-agent re-reads the WRITTEN spec (not the idea);
        blocking finding → back to spec step
 → devilsAdvocate persona (deep risk assessment)
-→ local or ruflo provider (for distributed code implementation)
+→ local provider (for distributed code implementation)
 → pnpm test (run unit/integration tests)
 → ecc provider (security audit and CVE)
 → engram provider (save architectural decisions)

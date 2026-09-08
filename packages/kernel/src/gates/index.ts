@@ -62,7 +62,7 @@ export function evaluateTestEvidence(
     return {
       gate: "test-evidence",
       status: "blocked",
-      reason: "TestEvidence absent — Ruflo tester did not produce output",
+      reason: "TestEvidence absent — tester did not produce output",
     };
   }
   if (!evidence.passed) {
