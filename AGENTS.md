@@ -276,17 +276,6 @@ Rule: do not activate a Minion because it exists — only because the decision t
 
 ---
 
-## RUFLO ESCALATION CONDITIONS
-
-Activate if: Level 4 confirmed, Architect and Devil disagree, high uncertainty after
-filesystem scan, parallel Minions needed, task exceeds local workflow.
-
-Modes: `OFF` | `CONSULT` (default) | `DELEGATE` | `AUTO`
-
-Ruflo does not rule. Ruflo advises or executes when Gru decides so.
-
----
-
 ## GRAPHIFY PROTOCOL — READ BEFORE ENGRAM
 
 If graphify-out/graph.json exists:
@@ -357,7 +346,6 @@ Commit or push       → mandatory reviewer.
 Long session         → pause and replan.
 Critical change      → devil + human approval.
 Library doubt        → context7.
-Extreme complexity   → Ruflo.
 ```
 
 ---
@@ -481,6 +469,6 @@ PURPLE (purpleteam-coordinator — drives cyclic loop + persists learnings).
 
 > Full strict runtime behavior rules: → see STRICT_PROVIDER_RUNTIME.md
 
-Guardrails: provider selection follows level routing (never skip levels); Ruflo is disabled;
+Guardrails: provider selection follows level routing (never skip levels);
 providers report availability before invocation; on provider failure: block task, report error,
 do not silently fallback.

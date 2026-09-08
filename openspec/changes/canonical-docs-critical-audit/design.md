@@ -31,7 +31,7 @@ igual que ya hace `gru_orchestrator/CLAUDE.md`.
 | 1 | Small | filesystem → builder → light reviewer |
 | 2 | Medium | filesystem → light architect → mini-spec → builder → tester → reviewer |
 | 3 | Large | filesystem → architect → devil → spec → 3c → 3d → pm → builder → tester → security → reviewer → memory |
-| 4 | Critical | filesystem → architect → devil → Ruflo CONSULT → full spec → human approval → phased implementation → tester → security → reviewer → Ruflo second review → human approval → memory |
+| 4 | Critical | filesystem → architect → devil → full spec → human approval → phased implementation → tester → security → reviewer → human approval → memory |
 
 → full sequences, rationale, and per-step detail: `docs/harness-reference.md#workflow-sequences`
 ```

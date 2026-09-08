@@ -20,7 +20,7 @@ El resultado es que `orchestrateAgenticTask()` devuelve `PlanResult` (artefacto 
 ## Alternativas descartadas
 
 **A: Añadir campos a PlanResult**
-Descartado: PlanResult pertenece al pipeline agentic (ruflo). DelegationReport es ortogonal — aplica también a delegaciones síncronas y bloqueadas que nunca llegan al pipeline.
+Descartado: PlanResult pertenece al pipeline agentic. DelegationReport es ortogonal — aplica también a delegaciones síncronas y bloqueadas que nunca llegan al pipeline.
 
 **B: Log estructurado en runs/**.json**
 Descartado: ya existe pero no es un tipo exportado consumible programáticamente.

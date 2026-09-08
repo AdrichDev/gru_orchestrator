@@ -52,8 +52,7 @@ gate mecánico sobre la spec ya redactada. Son complementarios, no alternativos.
   el usuario pidió explícitamente esta doble validación; el coste de un bug de spec detectado
   en builder/tester es mayor.
 - Si 3d encuentra bloqueante y se repite el ciclo demasiadas veces → señal de que el
-  problema original (paso 1-2) estaba mal entendido, no que 3c/3d fallen. Mitigación:
-  si 3d rebota 2 veces la misma spec, escalar a Ruflo CONSULT.
+  problema original (paso 1-2) estaba mal entendido, no que 3c/3d fallen.
 
 ## Alcance de archivos a tocar
 

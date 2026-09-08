@@ -27,9 +27,7 @@ Añadir un `classifyTask()` service encima del routing existente:
 "Minion" es el nombre Gru para agentes/subagentes reales. Cada minion mapea a:
 - `minion-filesystem` → HarnessAdapter file-tools
 - `minion-architect` → gentlePi / local provider
-- `minion-builder` → ruflo / local provider
-- `minion-reviewer` → ruflo reviewer agent
-- `minion-tester` → ruflo tester agent
+- `minion-builder` → local provider
 - `minion-devil` → devilsAdvocate persona
 - `minion-security` → ecc provider
 - `minion-docs` → context7 delegate

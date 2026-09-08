@@ -19,7 +19,6 @@ export interface ProjectConfig {
   project: { name: string };
   routing: {
     defaultMode: string;
-    enableRuflo: boolean;
     enableGentlePi: boolean;
     enableGentlemanCli: boolean;
     enableECC: boolean;

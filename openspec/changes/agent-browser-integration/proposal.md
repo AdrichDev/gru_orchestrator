@@ -24,14 +24,12 @@ del cierre de una tarea — no solo cuando se invoca explícitamente `/verify` o
 ## Propuesta
 
 1. Instalar global: `npm install -g agent-browser` → `agent-browser install`.
-2. NO sustituye a `webapp-testing` (Playwright) ni a `browser` (skill existente de
-   browser automation para claude-flow). Rol distinto:
+2. NO sustituye a `webapp-testing` (Playwright). Rol distinto:
    - `agent-browser` = comprobación rápida ad-hoc, snapshot/click/screenshot en 1-2 comandos,
      usada por Gru mismo al cerrar una tarea de frontend (regla existente en `CLAUDE.md`:
      "For UI or frontend changes, start the dev server and use the feature in a browser
      before reporting the task as complete").
    - `webapp-testing` (Playwright) = suite de test automatizado, reproducible, para CI.
-   - `browser` (skill claude-flow) = automation orientada a swarms/agentes paralelos.
 3. Añadir referencia en `CLAUDE.md` (raíz) dentro de la regla ya existente de UI/frontend:
    mencionar `agent-browser` como la herramienta concreta para el check manual pre-cierre.
 4. NO añadir un paso nuevo en la tabla de niveles (0-4): esto no es un gate de workflow,

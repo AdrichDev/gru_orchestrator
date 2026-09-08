@@ -111,7 +111,7 @@ gru init [选项]                       # 多 runtime 脚手架（见下文）
 ```text
 1. classifyTask()      → 级别 0-4 + 风险信号（双语 ES/EN）
 2. 审批 gate           → 若有风险："批准执行吗？(si/NO)"
-3. routeTask()         → 按关键词选择 provider（ruflo、gentlePi、ecc、engram...）
+3. routeTask()         → 按关键词选择 provider（gentlePi、ecc、engram...）
 4. Devil's Advocate    → 飞行前否决（provider 缺失、把目录当 executor）
 5. 真实健康检查         → 若 provider 未安装：BLOCKED + 如何安装
 6. 真实执行            → 结果 + runs/run_*.json 中的可审计日志
@@ -204,7 +204,7 @@ gru init --awesome-copilot                 # 同时下载 skills 目录
 `--scope global` 时，标记为 project-only 的文件（契约、`.mcp.json`、runtime 文件）不写入；
 只把共享的 `.gru/*` 播种到 `~/.gru/`。
 
-`.mcp.json` 注册 **claude-flow/ruflo**、**context7** 和 **engram** 的 MCP 服务器。
+`.mcp.json` 注册 **context7** 和 **engram** 的 MCP 服务器。
 把 `ENGRAM_BIN` 调整为你的本地路径。
 
 ---
@@ -216,7 +216,6 @@ Gru 不产出工件：它委托给专门的 provider。目录：
 | Provider ID | 可执行文件 / 命令 | 角色 | 外部 | 安装提示 |
 | :--- | :--- | :--- | :--- | :--- |
 | **local** | 直接命令 | 本地 workspace 任务（filesystem、git、npm、tests）。 | 否 | — |
-| **ruflo** | `ruflo` | 用于复杂任务和并行 swarm 的多 agent 编排器。 | 是 | `pnpm dlx ruflo@latest init wizard` |
 | **gentlePi** | `gentle-ai`/`pi` | SDD/OpenSpec 规范与有纪律的 TDD。 | 是 | `pi install npm:gentle-pi`（需要 `pi`） |
 | **gentlemanCli** | `gentle-ai` | 环境诊断、skill 更新与 sync。 | 是 | 官方安装器（macOS/Linux）；Windows：手动或 WSL |
 | **ecc** | `ecc` | 安全审计、策略与 CVE 检测。 | 是 | `pnpm add -D ecc-universal` |
@@ -238,7 +237,6 @@ Gru 不产出工件：它委托给专门的 provider。目录：
 | `记住我们决定使用无会话的 JWT` | 0 | 否 | engram |
 | `在目录中搜索一个 code review skill` | 0 | 否 | awesomeCopilot |
 | `审计安全并审查 CVE` | 2 | **是** | ecc |
-| `为支付功能使用多 agent swarm` | 1 | **是**（花费） | ruflo |
 | `删除生产数据库` | 4 | **是** | 未批准则阻塞 |
 
 ---
@@ -310,8 +308,8 @@ provider/角色参与：
 级别 0  local
 级别 1  local → 轻量校验
 级别 2  scan → gentlePi (mini-spec) → local → tests → devil → engram
-级别 3  scan → gentlePi (SDD) → devil → local/ruflo → tests → ecc → engram
-级别 4  以上全部 + Ruflo CONSULT + 双重人类审批
+级别 3  scan → gentlePi (SDD) → devil → local → tests → ecc → engram
+级别 4  以上全部 + 双重人类审批
 ```
 
 harness 自动应用的规则：

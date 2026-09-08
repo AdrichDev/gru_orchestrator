@@ -117,7 +117,7 @@ Orchestrates a task end to end:
 ```text
 1. classifyTask()      → level 0-4 + risk signals (bilingual ES/EN)
 2. Approval gate       → if there is risk: "Approve execution? (yes/NO)"
-3. routeTask()         → picks the provider by keywords (ruflo, gentlePi, ecc, engram...)
+3. routeTask()         → picks the provider by keywords (gentlePi, ecc, engram...)
 4. Devil's Advocate    → pre-flight veto (missing provider, catalog as executor)
 5. Real health check   → if the provider is not installed: BLOCKED + how to install it
 6. Real execution      → result + auditable log in runs/run_*.json
@@ -214,7 +214,7 @@ The root `AGENTS.md` is shared by codex/cursor/antigravity: it is deduplicated b
 (written only once). With `--scope global`, files marked project-only (contracts, `.mcp.json`,
 runtime files) are not written; only the shared `.gru/*` files are seeded into `~/.gru/`.
 
-`.mcp.json` registers the MCP servers for **claude-flow/ruflo**, **context7** and
+`.mcp.json` registers the MCP servers for **context7** and
 **engram**. Adjust `ENGRAM_BIN` to your local path.
 
 ---
@@ -226,7 +226,6 @@ Gru does not produce artifacts: it delegates to specialized providers. The catal
 | Provider ID | Executable / Command | Role | External | Install hint |
 | :--- | :--- | :--- | :--- | :--- |
 | **local** | direct command | Local workspace tasks (filesystem, git, npm, tests). | no | — |
-| **ruflo** | `ruflo` | Multi-agent orchestrator for complex tasks and parallel swarms. | yes | `pnpm dlx ruflo@latest init wizard` |
 | **gentlePi** | `gentle-ai`/`pi` | SDD/OpenSpec specification and disciplined TDD. | yes | `pi install npm:gentle-pi` (requires `pi`) |
 | **gentlemanCli** | `gentle-ai` | Environment diagnostics, skill updates and sync. | yes | official installer (macOS/Linux); Windows: manual or WSL |
 | **ecc** | `ecc` | Security audit, policies and CVE detection. | yes | `pnpm add -D ecc-universal` |
@@ -249,7 +248,6 @@ matching `SKILL.md`** — it never executes the catalog as a provider.
 | `remember that we decided to use JWT without sessions` | 0 | no | engram |
 | `search the catalog for a code review skill` | 0 | no | awesomeCopilot |
 | `audit security and review CVEs` | 2 | **yes** | ecc |
-| `use a multi-agent swarm for the payments feature` | 1 | **yes** (cost) | ruflo |
 | `delete the production database` | 4 | **yes** | blocked without approval |
 
 ---
@@ -323,8 +321,8 @@ Each level defines which providers/roles take part:
 Level 0  local
 Level 1  local → light validation
 Level 2  scan → gentlePi (mini-spec) → local → tests → devil → engram
-Level 3  scan → gentlePi (SDD) → devil → local/ruflo → tests → ecc → engram
-Level 4  all of the above + Ruflo CONSULT + double human approval
+Level 3  scan → gentlePi (SDD) → devil → local → tests → ecc → engram
+Level 4  all of the above + double human approval
 ```
 
 Rules the harness applies on its own:

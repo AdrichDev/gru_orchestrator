@@ -144,7 +144,7 @@ async function runDelegate(args: string[]): Promise<void> {
 
   if (operationIdx === -1 || taskIdx === -1) {
     console.error("Uso: gru delegate [<provider>] --operation <op> --task \"<text>\" [--json] [--context <ref>] [--constraint <c>] [--timeout <ms>]");
-    console.error("  <provider>  — id del provider (ecc|ruflo|gentlePi|…); omitir para auto-resolver");
+    console.error("  <provider>  — id del provider (ecc|gentlePi|…); omitir para auto-resolver");
     console.error("  --operation — id de operación (consult|review|implement|plan|…)");
     console.error("  --task      — descripción de la tarea (texto)");
     console.error("  --context   — referencia de contexto portable (repetible)");
@@ -233,7 +233,7 @@ async function main(): Promise<void> {
     console.log("    --awesome-copilot: download the awesome-copilot skills catalog (~100MB) into ~/.gru/awesome-copilot");
     console.log("    --skills: alias for --awesome-copilot");
     console.log('  pnpm gru delegate [<provider>] --operation <op> --task "<text>" [--json] [--context <ref>] [--constraint <c>] [--timeout <ms>]');
-    console.log("    <provider>: id del provider (ecc|ruflo|gentlePi|…); omitir para auto-resolver");
+    console.log("    <provider>: id del provider (ecc|gentlePi|…); omitir para auto-resolver");
     console.log("    --operation: id de operación soportada por el provider");
     console.log("    --task:      texto de la tarea a delegar");
     return;

@@ -10,7 +10,7 @@ import type { ProviderId, ProviderAvailability } from "../../../shared/src/ports
  *   - optional-pending    → deepagents-style SDK provider with no entry
  *                           configured in the current environment.
  * Both are informational. A genuinely required-but-missing CLI provider
- * (e.g. ruflo binary not found) is NOT optional and returns false here.
+ * (e.g. its binary not found) is NOT optional and returns false here.
  */
 export function isOptionalOrDisabled(
   providerId: ProviderId,

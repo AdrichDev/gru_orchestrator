@@ -325,7 +325,7 @@ describe("resolveDelegate", () => {
     const registry = buildRegistry(true);
     // ecc supports "consult" and "review" but not "implement"
     const result = await resolveDelegate("implement", registry);
-    // ruflo not in this test registry → BLOCKED
+    // no delegate in this test registry supports "implement" → BLOCKED
     expect(result.blocked).toBe(true);
   });
 

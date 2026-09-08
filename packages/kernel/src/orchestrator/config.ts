@@ -10,7 +10,6 @@ import { resolveConfigPath, resolveProvidersPath } from "../config/resolve.js";
 // ── SEC-05: runtime schema guards ─────────────────────────────────────────────
 
 const ROUTING_BOOLEAN_KEYS = [
-  "enableRuflo",
   "enableGentlePi",
   "enableGentlemanCli",
   "enableECC",
@@ -93,7 +92,6 @@ const DEFAULT_CONFIG: ProjectConfig = {
   project: { name: "gru-orchestrator" },
   routing: {
     defaultMode: "normal",
-    enableRuflo: true,
     enableGentlePi: true,
     enableGentlemanCli: true,
     enableECC: true,
@@ -155,7 +153,6 @@ export function loadConfig(): { config: ProjectConfig; providers: ProvidersFile 
 export function isProviderEnabled(providerId: ProviderId, config: ProjectConfig, providers: ProvidersFile): boolean {
   const keyMap: Record<ProviderId, { routingKey: keyof ProjectConfig["routing"] | null; providerKey: string }> = {
     local: { routingKey: null, providerKey: "local" },
-    ruflo: { routingKey: "enableRuflo", providerKey: "ruflo" },
     gentlePi: { routingKey: "enableGentlePi", providerKey: "gentlePi" },
     gentlemanCli: { routingKey: "enableGentlemanCli", providerKey: "gentlemanCli" },
     ecc: { routingKey: "enableECC", providerKey: "ecc" },

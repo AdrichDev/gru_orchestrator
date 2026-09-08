@@ -39,7 +39,6 @@ import { applyPersonas } from "./personas.js";
 import {
   buildReviewResultFromOutput,
   buildTestEvidenceFromOutput,
-  parseWorkflowState,
   makeBlockedReview,
 } from "./agentic-helpers.js";
 
@@ -353,7 +352,7 @@ export async function orchestrateAgenticTask(
   }
 
   throw Object.assign(
-    new Error("CAPABILITY_UNSUPPORTED: Agentic pipeline requires a delegated operation without Ruflo"),
+    new Error("CAPABILITY_UNSUPPORTED: Agentic pipeline requires a delegated operation"),
     { code: "CAPABILITY_UNSUPPORTED", recoverable: false }
   );
 }

@@ -24,7 +24,7 @@
 
 ## 🧠 什么是 Gru Harness？
 
-Gru 是一个 **LLM 编排 harness**：一个协调层，集中决策、评估每个任务的风险，并将执行委派给专用 provider（Ruflo、Gentle-Pi、ECC、Engram、Awesome Copilot……）。它可运行在 Claude Code、Codex、Gemini CLI、OpenCode、Cursor 或 Antigravity 内部，也可通过 `gru` CLI 独立运行。
+Gru 是一个 **LLM 编排 harness**：一个协调层，集中决策、评估每个任务的风险，并将执行委派给专用 provider（Gentle-Pi、ECC、Engram、Awesome Copilot……）。它可运行在 Claude Code、Codex、Gemini CLI、OpenCode、Cursor 或 Antigravity 内部，也可通过 `gru` CLI 独立运行。
 
 ### 核心原则
 
@@ -40,7 +40,7 @@ Gru 是一个 **LLM 编排 harness**：一个协调层，集中决策、评估�
 两个不同的概念，**不可**互换：
 
 * **Minion** —— 被委派的*角色*（builder、reviewer、architect、tester、security、devil、pm、docs、filesystem、context7、memory、mcp）。它是 Gru 委派的**工作单元**。共 13 个角色，每个职责单一。
-* **Provider** —— 执行*后端*（`local`、`ruflo`、`gentlePi`、`gentlemanCli`、`ecc`、`deepagents`、`engram`、`awesomeCopilot`）。它是执行 Minion 工作的**运行时**。
+* **Provider** —— 执行*后端*（`local`、`gentlePi`、`gentlemanCli`、`ecc`、`deepagents`、`engram`、`awesomeCopilot`）。它是执行 Minion 工作的**运行时**。
 
 > Minion 是角色（ROLE）。Provider 是后端（BACKEND）。Gru 根据级别和任务类型选择两者。
 
@@ -56,7 +56,7 @@ Gru 对每个任务评分（复杂度 + 风险）并在行动前分类：
 | **1** | 小 | `local` + devil/caveman |
 | **2** | 中 | 轻量 architect → mini-spec → builder → tester → reviewer |
 | **3** | 大 | architect → devil → spec → 按单元 builder → tester → security → reviewer |
-| **4** | 关键 | + Ruflo CONSULT + **人工审批** + 独立 reviewer |
+| **4** | 关键 | + **人工审批** + 独立 reviewer |
 
 分类前**必须**执行 **Filesystem Scan**。仓库证据可以提升级别，但没有证据绝不降低。
 
@@ -95,7 +95,7 @@ gru init [options]                   # 多 runtime 脚手架
 
 ## 🔌 Providers
 
-Gru 委派给专用 provider：`local`、`ruflo`、`gentlePi`、`gentlemanCli`、`ecc`、
+Gru 委派给专用 provider：`local`、`gentlePi`、`gentlemanCli`、`ecc`、
 `deepagents`、`engram` 和 `awesomeCopilot`（仅搜索目录）。在严格运行时下，缺失的
 provider 会阻止任务并给出安装提示——没有静默回退。
 

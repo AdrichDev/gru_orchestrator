@@ -6,7 +6,7 @@ import { EngramProvider } from "@gru/provider-engram";
 import { LocalProvider } from "@gru/provider-local";
 
 import type { DelegationProviderId, ProviderDelegate } from "../../../shared/src/ports/delegation.js";
-import { SimpleProviderDelegate, AgenticProviderDelegate } from "./base.js";
+import { SimpleProviderDelegate } from "./base.js";
 import { AwesomeCopilotDelegate } from "./awesome-copilot.js";
 import { Context7Delegate } from "./context7.js";
 import { DefaultDelegationRegistry } from "./registry.js";
@@ -23,8 +23,8 @@ export { Context7Delegate } from "./context7.js";
 
 /**
  * Builds the delegation registry over the EXISTING provider runtimes.
- * Ruflo uses the agentic façade (workflow lifecycle); the rest use the simple
- * façade. Context7 probes the real MCP server on detect().
+ * They all use the simple façade. Context7 probes the real MCP server on
+ * detect().
  */
 export function createDelegationRegistry(): DefaultDelegationRegistry {
   const registry = new DefaultDelegationRegistry();

@@ -28,7 +28,7 @@ function fakeDetection(available: boolean, reason?: string): ProviderDetection {
 }
 
 function fakeDelegate(opts: {
-  id: "ecc" | "ruflo" | "engram" | "local" | "context7" | "awesomeCopilot" | "gentlePi" | "gentlemanCli" | "deepagents";
+  id: "ecc" | "engram" | "local" | "context7" | "awesomeCopilot" | "gentlePi" | "gentlemanCli" | "deepagents";
   available?: boolean;
   operations?: string[];
   result?: Partial<ProviderExecutionResult>;
@@ -169,13 +169,13 @@ describe("portableResult", () => {
 
   it("preserves logical artifact refs unchanged", () => {
     const raw: ProviderExecutionResult = {
-      providerId: "ruflo",
+      providerId: "ecc",
       invocationId: "inv-2",
       status: "SUBMITTED",
-      artifacts: ["ruflo:workflow:wf-123:submitted"],
+      artifacts: ["ecc:workflow:wf-123:submitted"],
     };
     const result = portableResult(raw);
-    expect(result.artifacts).toContain("ruflo:workflow:wf-123:submitted");
+    expect(result.artifacts).toContain("ecc:workflow:wf-123:submitted");
   });
 });
 

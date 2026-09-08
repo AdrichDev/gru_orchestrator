@@ -12,7 +12,7 @@ export interface ProviderAdapterStatus {
   version?: string;
 }
 
-/** High-level adapter for an agent/capability provider (Gentleman, AwesomeCopilot, Ruflo). */
+/** High-level adapter for an agent/capability provider (Gentleman, AwesomeCopilot). */
 export interface ProviderAdapter {
   readonly id: ProviderId;
   checkAvailability(): Promise<ProviderAdapterStatus>;
@@ -39,7 +39,7 @@ export interface TaskAssignment {
   phase: SddPhase;
   executor: AgentDescriptor;
   reviewer: AgentDescriptor;    // must differ from executor (no self-approval)
-  tester: AgentDescriptor;      // Ruflo mandatory if available; else BLOCKED
+  tester: AgentDescriptor;      // dedicated tester mandatory if available; else BLOCKED
   scope: string[];              // affected file paths
   gates: QualityGate[];
 }
@@ -63,7 +63,7 @@ export interface PlanResult {
 }
 
 export interface AgentResolver {
-  /** Selects executor, independent reviewer, and Ruflo tester for a task+phase. */
+  /** Selects executor, independent reviewer, and tester for a task+phase. */
   resolve(task: GruTask, phase: SddPhase): Promise<TaskAssignment>;
 }
 

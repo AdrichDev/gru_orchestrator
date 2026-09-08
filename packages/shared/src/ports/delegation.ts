@@ -93,7 +93,7 @@ export interface ProviderExecutionResult {
   /** Logical or relative references only. */
   artifacts?: string[];
   evidenceRefs?: string[];
-  /** Preserved when the underlying runtime returns one (e.g. ruflo workflowId). */
+  /** Preserved when the underlying runtime returns one (e.g. a workflowId). */
   externalExecutionId?: string;
   error?: string;
   metadata?: Record<string, unknown>;

@@ -22,7 +22,6 @@ This file does NOT redefine:
 - Decision table.
 - Minion contract.
 - Workflows by level.
-- Escalation to Ruflo.
 
 ---
 
@@ -111,7 +110,6 @@ In every sub-agent launch prompt, the orchestrator MUST IMPERATIVELY and MANDATO
 /skills/core/testing.md
 /skills/core/security-review.md
 /skills/core/ai-ready-repository.md
-/skills/ruflo/                    → skills that require Ruflo DELEGATE
 /skills/community/                → third-party skills (awesome-copilot)
 ```
 

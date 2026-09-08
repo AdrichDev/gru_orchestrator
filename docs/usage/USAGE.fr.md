@@ -121,7 +121,7 @@ Orchestre une tâche de bout en bout :
 ```text
 1. classifyTask()      → niveau 0-4 + signaux de risque (bilingue ES/EN)
 2. Gate d'approbation  → s'il y a un risque : « Approuvez-vous l'exécution ? (oui/NON) »
-3. routeTask()         → choisit le provider par mots-clés (ruflo, gentlePi, ecc, engram...)
+3. routeTask()         → choisit le provider par mots-clés (gentlePi, ecc, engram...)
 4. Devil's Advocate    → véto avant vol (provider absent, catalogue comme executor)
 5. Health check réel   → si le provider n'est pas installé : BLOCKED + comment l'installer
 6. Exécution réelle    → résultat + log auditable dans runs/run_*.json
@@ -221,7 +221,7 @@ destination (écrit une seule fois). Avec `--scope global`, les fichiers marqué
 (contrats, `.mcp.json`, fichiers de runtime) ne sont pas écrits ; seuls les `.gru/*` partagés
 sont semés dans `~/.gru/`.
 
-`.mcp.json` enregistre les serveurs MCP de **claude-flow/ruflo**, **context7** et
+`.mcp.json` enregistre les serveurs MCP de **context7** et
 **engram**. Ajustez `ENGRAM_BIN` à votre chemin local.
 
 ---
@@ -233,7 +233,6 @@ Gru ne produit pas d'artefacts : il délègue à des providers spécialisés. Le
 | Provider ID | Exécutable / Commande | Rôle | Externe | Astuce d'installation |
 | :--- | :--- | :--- | :--- | :--- |
 | **local** | commande directe | Tâches locales du workspace (filesystem, git, npm, tests). | non | — |
-| **ruflo** | `ruflo` | Orchestrateur multi-agent pour tâches complexes et swarms parallèles. | oui | `pnpm dlx ruflo@latest init wizard` |
 | **gentlePi** | `gentle-ai`/`pi` | Spécification SDD/OpenSpec et TDD discipliné. | oui | `pi install npm:gentle-pi` (nécessite `pi`) |
 | **gentlemanCli** | `gentle-ai` | Diagnostic d'environnement, mise à jour des skills et sync. | oui | installateur officiel (macOS/Linux) ; Windows : manuel ou WSL |
 | **ecc** | `ecc` | Audit de sécurité, politiques et détection de CVE. | oui | `pnpm add -D ecc-universal` |
@@ -256,7 +255,6 @@ Voir [STRICT_PROVIDER_RUNTIME.md](../../STRICT_PROVIDER_RUNTIME.md).
 | `souviens-toi qu'on a décidé d'utiliser JWT sans sessions` | 0 | non | engram |
 | `cherche dans le catalogue une skill de code review` | 0 | non | awesomeCopilot |
 | `audite la sécurité et revois les CVE` | 2 | **oui** | ecc |
-| `utilise un swarm multi-agent pour la feature de paiements` | 1 | **oui** (coût) | ruflo |
 | `supprime la base de données de production` | 4 | **oui** | bloquée sans approbation |
 
 ---
@@ -331,8 +329,8 @@ risque. Chaque niveau définit quels providers/rôles interviennent :
 Niveau 0  local
 Niveau 1  local → validation légère
 Niveau 2  scan → gentlePi (mini-spec) → local → tests → devil → engram
-Niveau 3  scan → gentlePi (SDD) → devil → local/ruflo → tests → ecc → engram
-Niveau 4  tout ce qui précède + Ruflo CONSULT + double approbation humaine
+Niveau 3  scan → gentlePi (SDD) → devil → local → tests → ecc → engram
+Niveau 4  tout ce qui précède + double approbation humaine
 ```
 
 Règles que le harness applique de lui-même :

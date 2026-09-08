@@ -54,11 +54,6 @@ export function buildTestEvidenceFromOutput(
   };
 }
 
-export function parseWorkflowState(result: { artifacts?: string[] }): string {
-  const tag = (result.artifacts ?? []).find((a) => a.startsWith("ruflo:workflow:"));
-  return tag ? (tag.split(":")[3] ?? "unknown") : "unknown";
-}
-
 export function makeBlockedReview(assignment: TaskAssignment): ReviewResult {
   return {
     assignmentId: assignment.id,

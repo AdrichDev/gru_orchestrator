@@ -17,7 +17,6 @@
 | Provider (ProviderId) | Command / Executable | Responsibility and Role |
 |---|---|---|
 | **local** | Direct command | Execution of local tasks (filesystem, git, npm, tests). |
-| **ruflo** | `ruflo` | Multi-agent orchestrator for complex tasks and swarms. |
 | **gentlePi** | `gentle-ai/pi` | Support and instrumentation for SDD and OpenSpec workflows. |
 | **gentlemanCli** | `gentle-ai` | Environment diagnostics, skill updates, and sync. |
 | **ecc** | `ecc` | Policy audit, security review, and CVE. |
@@ -138,7 +137,7 @@ local provider (filesystem scan)
        unjustified alternatives, unlisted risks, "how" disguised as "what"; blocking
        finding → back to spec)
 → devilsAdvocate persona (deep risk assessment)
-→ local or ruflo provider (for distributed code implementation)
+→ local provider (for distributed code implementation)
 → pnpm test (run unit/integration tests)
 → ecc provider (security audit and CVE)
 → engram provider (save architectural decisions)
@@ -152,9 +151,8 @@ local provider (filesystem scan)
 → 3c: spec self-check
 → 3d: devil re-check (fresh sub-agent; blocking finding → back to spec)
 → devilsAdvocate persona (mandatory audit)
-→ ruflo provider (multi-agent coordination in CONSULT/DELEGATE mode)
 → explicit human approval
-→ local/ruflo provider (phased implementation and testing)
+→ local provider (phased implementation and testing)
 → ecc provider (mandatory security)
 → final human approval
 → engram provider (historical record of decisions)
@@ -196,7 +194,7 @@ After:
 
 ### Context Confidence Level
 ```text
-HIGH   → Repo analyzed or Ruflo read the project.
+HIGH   → Repo analyzed.
 MEDIUM → User responded, partial memory.
 LOW    → Only assumptions.
 ```
