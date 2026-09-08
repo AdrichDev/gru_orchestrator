@@ -15,6 +15,13 @@ args = [
     "--tools=agent",
 ]
 
+[mcp_servers.caveman-shrink]
+command = "npx"
+args = [
+    "-y",
+    "caveman-shrink",
+]
+
 [mcp_servers.context7]
 command = "npx"
 args = [
@@ -23,3 +30,9 @@ args = [
     "--",
     "context7-mcp",
 ]
+
+[shell_environment_policy]
+inherit = "core"
+
+[shell_environment_policy.set]
+CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1"
