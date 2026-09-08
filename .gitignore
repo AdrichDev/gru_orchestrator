@@ -42,3 +42,6 @@ coverage/
 # Local Pi runtime state
 .atl/
 .pi/
+
+# Local skills mirror (regenerated, not part of the repo)
+.agents/
