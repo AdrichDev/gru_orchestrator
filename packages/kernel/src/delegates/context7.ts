@@ -11,35 +11,17 @@ import type {
 } from "../../../shared/src/ports/delegation.js";
 import { capabilitiesFor } from "./capabilities.js";
 import { assertOperation, makeInvocationId } from "./base.js";
+import { readTrustedContext7Config, type Context7Config } from "./mcp-trust.js";
 
-export interface Context7Config {
-  command: string;
-  args: string[];
-}
+/** Reexportado desde `mcp-trust` para que config y verificación compartan un solo tipo. */
+export type { Context7Config } from "./mcp-trust.js";
 
+/**
+ * Configuración de Context7 leída SOLO del `.mcp.json` del proyecto y SOLO si está confiada
+ * (huella sha256) y su comando pasa la allowlist. Ver `mcp-trust.ts` y el hallazgo F-02.
+ */
 export function readContext7Config(): Context7Config | null {
-  let dir = process.cwd();
-  for (let i = 0; i < 5; i++) {
-    const mcpPath = path.join(dir, ".mcp.json");
-    if (fs.existsSync(mcpPath)) {
-      try {
-        const raw = fs.readFileSync(mcpPath, "utf-8");
-        const config = JSON.parse(raw) as Record<string, unknown>;
-        const servers = config?.mcpServers as Record<string, unknown> | undefined;
-        const server = servers?.context7 as { command?: unknown; args?: unknown } | undefined;
-        if (typeof server?.command === "string" && Array.isArray(server.args)) {
-          return { command: server.command, args: server.args as string[] };
-        }
-      } catch {
-        // malformed .mcp.json → skip
-      }
-      return null;
-    }
-    const parent = path.dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  return null;
+  return readTrustedContext7Config().config;
 }
 
 export async function probeContext7(config: Context7Config): Promise<boolean> {
@@ -116,6 +98,24 @@ export class Context7Delegate implements ProviderDelegate {
     const config = this._readConfig();
 
     if (!config) {
+      // Si hay fichero pero no se puede usar, se dice POR QUÉ: confiar es una acción explícita
+      // del usuario (`gru trust-mcp`), no algo que pueda decidir el modelo ni el repo.
+      const blocked = readTrustedContext7Config().blocked;
+      if (blocked) {
+        return {
+          providerId: "context7",
+          status: "UNAVAILABLE",
+          integration: "PLANNED",
+          reason:
+            blocked.kind === "untrusted"
+              ? `Context7 MCP bloqueado: ${blocked.reason}. Confía en él con "gru trust-mcp" si es tu proyecto.`
+              : `Context7 MCP bloqueado: ${blocked.reason}.`,
+          installHint:
+            blocked.kind === "untrusted"
+              ? `Revisa "${blocked.file}" y ejecuta "gru trust-mcp" en la raíz del proyecto para confiarlo.`
+              : 'Usa la allowlist con versión fija, p. ej.: { "command": "npx", "args": ["-y", "--package=@upstash/context7-mcp@2.2.5", "--", "context7-mcp"] }',
+        };
+      }
       return {
         providerId: "context7",
         status: "UNAVAILABLE",

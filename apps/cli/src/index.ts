@@ -14,6 +14,11 @@ import type { ProviderId } from "../../../packages/shared/src/ports/provider.js"
 import type { SddPhase } from "../../../packages/shared/src/ports/agent.js";
 import type { DelegationProviderId, ContextReference } from "../../../packages/shared/src/ports/delegation.js";
 import { createDelegationOrchestrator } from "../../../packages/kernel/src/delegates/index.js";
+import {
+  mcpProjectRoot,
+  readProjectMcpContext7Config,
+  trustMcpConfig,
+} from "../../../packages/kernel/src/delegates/mcp-trust.js";
 import { runInit, printInitSummary, isValidRuntime, ALL_RUNTIMES } from "./init.js";
 import type { InstallScope, RuntimeId } from "./init.js";
 import { printBanner } from "./banner.js";
@@ -115,6 +120,26 @@ async function askForFallback(error: ProviderUnavailableError, prompt: string, a
   } finally {
     rl.close();
   }
+}
+
+async function runTrustMcp(): Promise<void> {
+  const file = `${mcpProjectRoot()}/.mcp.json`;
+  const project = readProjectMcpContext7Config();
+  if (!project) {
+    console.error(`gru trust-mcp: no existe ${file}`);
+    process.exitCode = 2;
+    return;
+  }
+  if (!project.config) {
+    console.error(`gru trust-mcp: ${file} no declara un servidor "context7" utilizable`);
+    process.exitCode = 2;
+    return;
+  }
+  const fingerprint = trustMcpConfig(project.file);
+  console.log(`Confianza registrada para ${project.file}`);
+  console.log(`  comando:  ${project.config.command} ${project.config.args.join(" ")}`);
+  console.log(`  huella:   sha256:${fingerprint.slice(0, 16)}…`);
+  console.log("Si el fichero cambia, deja de estar confiado y hay que volver a ejecutar este comando.");
 }
 
 async function runDelegate(args: string[]): Promise<void> {
@@ -260,6 +285,13 @@ async function main(): Promise<void> {
   // This check uses the original args to preserve all flags for runDelegate().
   if (args[0] === "delegate" || args[0] === "/delegate") {
     await runDelegate(args);
+    return;
+  }
+
+  // ── trust-mcp — F-02: confiar explícitamente en el `.mcp.json` del proyecto ──
+  // Sin esto, gru NO ejecuta el servidor MCP que declare el repositorio.
+  if (args[0] === "trust-mcp" || args[0] === "/trust-mcp") {
+    await runTrustMcp();
     return;
   }
 
