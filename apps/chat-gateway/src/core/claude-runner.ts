@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import type { OrchestrateFn } from "./intake.js";
+import { resolvePermissionMode } from "./permission-mode.js";
 
 /**
  * Claude Code CLI engine for the chat gateway.
@@ -19,9 +20,9 @@ export interface ClaudeRunnerOptions {
   /** Command to invoke Claude Code. Default "claude" (must be on PATH). */
   bin?: string;
   /**
-   * Permission mode for headless runs. Headless MUST be non-interactive, so a
-   * mode that never prompts is required for tasks that touch files/shell.
-   * Default "bypassPermissions" (acts with full autonomy, like the admin).
+   * Permission mode for headless runs. Default `acceptEdits` (edits files, keeps the
+   * shell/network gates). `bypassPermissions` requires BOTH the explicit mode and
+   * `GRU_ALLOW_FULL_AUTONOMY=1`; see `permission-mode.ts` (hallazgo F-08).
    */
   permissionMode?: string;
   /** Optional model override (e.g. "claude-opus-4-8"). Empty => Claude default. */
@@ -40,13 +41,23 @@ interface ClaudeJsonResult {
   total_cost_usd?: number;
 }
 
-export function createClaudeRunner(options: ClaudeRunnerOptions = {}): OrchestrateFn {
+/** `OrchestrateFn` más el modo resuelto, para diagnóstico y pruebas. */
+export type ClaudeRunnerFn = OrchestrateFn & { permissionMode: string };
+
+export function createClaudeRunner(options: ClaudeRunnerOptions = {}): ClaudeRunnerFn {
   const bin = options.bin?.trim() || "claude";
-  const permissionMode = options.permissionMode?.trim() || "bypassPermissions";
+  // El modo NO se toma a ciegas de la opción: pasa por el resolutor, que exige dos llaves
+  // para la autonomía total y degrada cualquier valor desconocido (F-08).
+  const resolution = resolvePermissionMode(
+    options.permissionMode ?? process.env.CLAUDE_PERMISSION_MODE,
+    process.env.GRU_ALLOW_FULL_AUTONOMY,
+  );
+  const permissionMode = resolution.mode;
+  if (resolution.warning) console.warn(`[chat-gateway] ${resolution.warning}`);
   const model = options.model?.trim() || "";
   const timeoutMs = options.timeoutMs ?? 30 * 60_000;
 
-  return function orchestrateViaClaude(prompt: string): Promise<string> {
+  const orchestrateViaClaude = function (prompt: string): Promise<string> {
     const args = [
       "-p",
       prompt,
@@ -108,6 +119,10 @@ export function createClaudeRunner(options: ClaudeRunnerOptions = {}): Orchestra
       });
     });
   };
+  // Expuesto para pruebas y para el arranque del gateway (log/diagnóstico): deja ver qué
+  // modo se resolvió sin tener que mirar la línea de comandos del proceso hijo.
+  orchestrateViaClaude.permissionMode = permissionMode;
+  return orchestrateViaClaude;
 }
 
 /**

@@ -79,7 +79,9 @@ export function createIntentParser(options: IntentParserOptions = {}) {
   const timeoutMs = options.timeoutMs ?? 90_000;
 
   return function parseIntent(message: string): Promise<RawIntent> {
-    const args = ["-p", buildPrompt(message), "--output-format", "json", "--permission-mode", "bypassPermissions"];
+    // F-08: el parser solo tiene que devolver JSON; no necesita ninguna herramienta. Se queda
+    // en el modo más restrictivo en vez de regalar `bypassPermissions` a cada mensaje.
+    const args = ["-p", buildPrompt(message), "--output-format", "json", "--permission-mode", "default"];
     if (model) args.push("--model", model);
 
     return new Promise<RawIntent>((resolvePromise, reject) => {
